@@ -4,7 +4,7 @@ package main
 import (
 	"fmt"
 	"github.com/bcbchain/bclib/tendermint/abci/types"
-	"github.com/bcbchain/tendermint/proxy"
+	//"github.com/bcbchain/tendermint/proxy"
 )
 
 const (

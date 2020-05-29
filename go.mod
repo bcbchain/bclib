@@ -3,24 +3,30 @@ module github.com/bcbchain/bclib
 go 1.14
 
 require (
-	//github.com/bcbchain/sdk v0.0.3
-	//github.com/bcbchain/tendermint v0.0.2
+	github.com/Microsoft/go-winio v0.4.14 // indirect
+	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
+	github.com/bcbchain/sdk v0.0.0-20200529121232-bb3d3dc8a9d6
 	github.com/bgentry/speakeasy v0.1.0
 	github.com/btcsuite/btcd v0.20.1-beta
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/clipperhouse/typewriter v0.0.0-20200107164453-d21420026310
 	github.com/davecgh/go-spew v1.1.1
+	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/docker v1.13.1
 	github.com/docker/go-connections v0.4.0
+	github.com/docker/go-units v0.4.0 // indirect
 	github.com/fortytw2/leaktest v1.3.0
 	github.com/go-kit/kit v0.10.0
 	github.com/go-logfmt/logfmt v0.5.0
+	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/gogo/protobuf v1.3.1
 	github.com/google/gofuzz v1.1.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/howeyc/crc16 v0.0.0-20171223171357-2b2a61e366a6
 	github.com/jmhodges/levigo v1.0.0
 	github.com/json-iterator/go v1.1.9
+	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
+	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0
 	github.com/shirou/gopsutil v2.20.4+incompatible
