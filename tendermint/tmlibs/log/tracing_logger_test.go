@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	"github.com/AeReach/bclib/tendermint/tmlibs/log"
+	"github.com/bcbchain/bclib/tendermint/tmlibs/log"
 )
 
 func TestTracingLogger(t *testing.T) {

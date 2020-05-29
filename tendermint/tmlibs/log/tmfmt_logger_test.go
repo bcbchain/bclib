@@ -10,7 +10,7 @@ import (
 
 	kitlog "github.com/go-kit/kit/log"
 	"github.com/stretchr/testify/assert"
-	"github.com/AeReach/bclib/tendermint/tmlibs/log"
+	"github.com/bcbchain/bclib/tendermint/tmlibs/log"
 )
 
 func TestTMFmtLogger(t *testing.T) {

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/AeReach/bclib/tendermint/tmlibs/log"
+	"github.com/bcbchain/bclib/tendermint/tmlibs/log"
 )
 
 func TestVariousLevels(t *testing.T) {
