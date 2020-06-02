@@ -41,7 +41,7 @@ echo "==> Removing old directory..."
 rm -rf "$DIST_DIR"
 mkdir -p "$DIST_DIR"
 
-echo "==> Tar genesis files..."
+echo "==> Tar files..."
 GetDirs
 
 SRC_DIRS=""
