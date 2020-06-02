@@ -1,7 +1,6 @@
 package tx3
 
 import (
-	"github.com/bcbchain/sdk/sdk/rlp"
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
@@ -9,10 +8,10 @@ import (
 	"testing"
 
 	"github.com/bcbchain/bclib/algorithm"
-	"github.com/bcbchain/sdk/sdk/bn"
-	"github.com/bcbchain/bclib/types"
-
+	"github.com/bcbchain/bclib/bn"
+	"github.com/bcbchain/bclib/rlp"
 	"github.com/bcbchain/bclib/tendermint/go-crypto"
+	"github.com/bcbchain/bclib/types"
 )
 
 func TestTransaction_TxParse(t *testing.T) {

@@ -17,7 +17,6 @@
 package rlp
 
 import (
-	"github.com/bcbchain/sdk/sdk/bn"
 	"bufio"
 	"bytes"
 	"encoding/binary"
@@ -27,6 +26,8 @@ import (
 	"math/big"
 	"reflect"
 	"strings"
+
+	"github.com/bcbchain/bclib/bn"
 )
 
 var (

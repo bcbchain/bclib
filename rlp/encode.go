@@ -17,13 +17,14 @@
 package rlp
 
 import (
-	"github.com/bcbchain/sdk/sdk/bn"
 	"fmt"
 	"io"
 	"math/big"
 	"reflect"
 	"sort"
 	"sync"
+
+	"github.com/bcbchain/bclib/bn"
 )
 
 var (

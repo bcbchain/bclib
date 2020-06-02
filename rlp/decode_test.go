@@ -17,7 +17,6 @@
 package rlp
 
 import (
-	"github.com/bcbchain/sdk/sdk/bn"
 	"bytes"
 	"encoding/hex"
 	"errors"
@@ -27,6 +26,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/bcbchain/bclib/bn"
 )
 
 func TestStreamKind(t *testing.T) {

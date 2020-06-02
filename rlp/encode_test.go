@@ -17,7 +17,6 @@
 package rlp
 
 import (
-	"github.com/bcbchain/sdk/sdk/bn"
 	"bytes"
 	"errors"
 	"fmt"
@@ -26,6 +25,8 @@ import (
 	"math/big"
 	"sync"
 	"testing"
+
+	"github.com/bcbchain/bclib/bn"
 )
 
 type testEncoder struct {
