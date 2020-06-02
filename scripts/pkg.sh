@@ -61,7 +61,8 @@ pushd "$DIST_DIR" > /dev/null
 shasum -a256 ./* > "$project_name"_SHA256SUMS
 popd >/dev/null
 
+echo ""
 echo "==> Build results:"
-echo "==> Path: "../../$DIST_DIR""
+echo "==> Path: $DIST_DIR"
 echo "==> Files: "
 ls -hl "$DIST_DIR"
