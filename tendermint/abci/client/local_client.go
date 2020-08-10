@@ -15,6 +15,14 @@ type localClient struct {
 	Callback
 }
 
+func (app *localClient) DeliverTxsAsync(txs [][]byte) *ReqRes {
+	panic("implement me")
+}
+
+func (app *localClient) CheckTxsAsync(txs [][]byte) *ReqRes {
+	panic("implement me")
+}
+
 func NewLocalClient(mtx *sync.Mutex, app types.Application) *localClient {
 	cli := &localClient{
 		Application: app,

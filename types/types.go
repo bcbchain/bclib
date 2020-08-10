@@ -1,6 +1,7 @@
 package types
 
 import (
+	tx1 "github.com/bcbchain/bclib/tx/v1"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -48,6 +49,22 @@ type Transaction struct {
 	GasLimit int64     `json:"gasLimit"` // 交易发起者愿意为执行此次交易支付的GAS数量的最大值。
 	Note     string    `json:"note"`     // UTF-8编码的备注信息，要求小于256个字符。
 	Messages []Message `json:"messages"` // 交易消息，RLP编码格式。
+}
+
+type TxV1Result struct {
+	FromAddr    crypto.Address
+	Pubkey      crypto.PubKeyEd25519
+	Transaction tx1.Transaction
+}
+
+type TxV2Result struct {
+	Pubkey      crypto.PubKeyEd25519
+	Transaction Transaction
+}
+
+type TxV3Result struct {
+	Pubkey      crypto.PubKeyEd25519
+	Transaction Transaction
 }
 
 // Message - a contract method with its params

@@ -246,6 +246,13 @@ func (cli *socketClient) DeliverTxAsync(tx []byte) *ReqRes {
 	return cli.queueRequest(types.ToRequestDeliverTx(tx))
 }
 
+func (cli *socketClient) DeliverTxsAsync(txs [][]byte) *ReqRes {
+	return cli.queueRequest(types.ToRequestDeliverTxs(txs))
+}
+
+func (cli *socketClient) CheckTxsAsync(txs [][]byte) *ReqRes {
+	return cli.queueRequest(types.ToRequestCheckTxs(txs))
+}
 func (cli *socketClient) CheckTxAsync(tx []byte) *ReqRes {
 	return cli.queueRequest(types.ToRequestCheckTx(tx))
 }
@@ -426,8 +433,12 @@ func resMatchesReq(req *types.Request, res *types.Response) (ok bool) {
 		_, ok = res.Value.(*types.Response_SetOption)
 	case *types.Request_DeliverTx:
 		_, ok = res.Value.(*types.Response_DeliverTx)
+	case *types.Request_DeliverTxs:
+		_, ok = res.Value.(*types.Response_DeliverTxs)
 	case *types.Request_CheckTx:
 		_, ok = res.Value.(*types.Response_CheckTx)
+	case *types.Request_CheckTxs:
+		_, ok = res.Value.(*types.Response_CheckTxs)
 	case *types.Request_Commit:
 		_, ok = res.Value.(*types.Response_Commit)
 	case *types.Request_Query:

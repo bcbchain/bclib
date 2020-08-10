@@ -23,7 +23,9 @@ message Request {
     RequestQuery query = 7;
     RequestBeginBlock begin_block = 8;
     RequestCheckTx check_tx = 9;
+
     RequestDeliverTx deliver_tx = 19;
+
     RequestEndBlock end_block = 11;
     RequestCommit commit = 12;
   }
