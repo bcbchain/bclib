@@ -243,13 +243,14 @@ func (s *SocketServer) handleRequest(conn net.Conn, req *types.Request, response
 		res := s.app.DeliverTxs(r.DeliverTxs.Txs)
 		responses <- types.ToResponseDeliverTxs(res)
 	case *types.Request_CheckTx:
-		res := s.app.CheckTx(r.CheckTx.Tx)
-		responses <- types.ToResponseCheckTx(res)
+		s.app.CheckTxConcurrency(r.CheckTx.Tx, responses)
+		// res := s.app.CheckTx(r.CheckTx.Tx)
+		// responses <- types.ToResponseCheckTx(res)
 	case *types.Request_CheckTxs:
 		res := s.app.CheckTxs(r.CheckTxs.Txs)
 		responses <- types.ToResponseCheckTxs(res)
-	case *types.Request_checkTxConcurrency:
-		s.app.checkTxConcurrency(r.CheckTxs.Tx, responses)
+	case *types.Request_CheckTxConcurrency:
+		s.app.CheckTxConcurrency(r.CheckTxConcurrency.Tx, responses)
 	case *types.Request_Commit:
 		res := s.app.Commit()
 		responses <- types.ToResponseCommit(res)

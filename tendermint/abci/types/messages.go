@@ -114,6 +114,11 @@ func ToRequestCheckTxs(txs [][]byte) *Request {
 		Value: &Request_CheckTxs{&RequestCheckTxs{txs}},
 	}
 }
+func ToRequestCheckTxConcurrency(tx []byte) *Request {
+	return &Request{
+		Value: &Request_CheckTxConcurrency{&RequestCheckTx{tx}},
+	}
+}
 
 func ToRequestCommit() *Request {
 	return &Request{

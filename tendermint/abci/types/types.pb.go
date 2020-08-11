@@ -49,7 +49,7 @@ package types
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/bcbchain/bclib/types"
+	types2 "github.com/bcbchain/bclib/tx/types"
 	"math"
 
 	"github.com/bcbchain/bclib/tendermint/go-crypto"
@@ -147,6 +147,9 @@ type Request_CheckTx struct {
 type Request_CheckTxs struct {
 	CheckTxs *RequestCheckTxs `protobuf:"bytes,20,opt,name=check_txs,json=checkTxs,oneof"`
 }
+type Request_CheckTxConcurrency struct {
+	CheckTxConcurrency *RequestCheckTx `protobuf:"bytes,22,opt,name=check_txConcurrency,json=checkTxs,oneof"`
+}
 type Request_DeliverTx struct {
 	DeliverTx *RequestDeliverTx `protobuf:"bytes,19,opt,name=deliver_tx,json=deliverTx,oneof"`
 }
@@ -172,23 +175,24 @@ type Request_Rollback struct {
 	Rollback *RequestRollback `protobuf:"bytes,16,opt,name=rollback,oneof"`
 }
 
-func (*Request_Echo) isRequest_Value()       {}
-func (*Request_Flush) isRequest_Value()      {}
-func (*Request_Info) isRequest_Value()       {}
-func (*Request_SetOption) isRequest_Value()  {}
-func (*Request_InitChain) isRequest_Value()  {}
-func (*Request_Query) isRequest_Value()      {}
-func (*Request_QueryEx) isRequest_Value()    {}
-func (*Request_BeginBlock) isRequest_Value() {}
-func (*Request_CheckTx) isRequest_Value()    {}
-func (*Request_CheckTxs) isRequest_Value()   {}
-func (*Request_DeliverTx) isRequest_Value()  {}
-func (*Request_DeliverTxs) isRequest_Value() {}
-func (*Request_EndBlock) isRequest_Value()   {}
-func (*Request_Commit) isRequest_Value()     {}
-func (*Request_CleanData) isRequest_Value()  {}
-func (*Request_GetGenesis) isRequest_Value() {}
-func (*Request_Rollback) isRequest_Value()   {}
+func (*Request_Echo) isRequest_Value()               {}
+func (*Request_Flush) isRequest_Value()              {}
+func (*Request_Info) isRequest_Value()               {}
+func (*Request_SetOption) isRequest_Value()          {}
+func (*Request_InitChain) isRequest_Value()          {}
+func (*Request_Query) isRequest_Value()              {}
+func (*Request_QueryEx) isRequest_Value()            {}
+func (*Request_BeginBlock) isRequest_Value()         {}
+func (*Request_CheckTx) isRequest_Value()            {}
+func (*Request_CheckTxs) isRequest_Value()           {}
+func (*Request_CheckTxConcurrency) isRequest_Value() {}
+func (*Request_DeliverTx) isRequest_Value()          {}
+func (*Request_DeliverTxs) isRequest_Value()         {}
+func (*Request_EndBlock) isRequest_Value()           {}
+func (*Request_Commit) isRequest_Value()             {}
+func (*Request_CleanData) isRequest_Value()          {}
+func (*Request_GetGenesis) isRequest_Value()         {}
+func (*Request_Rollback) isRequest_Value()           {}
 
 func (m *Request) GetValue() isRequest_Value {
 	if m != nil {
@@ -265,6 +269,12 @@ func (m *Request) GetCheckTxs() *RequestCheckTxs {
 	}
 	return nil
 }
+func (m *Request) GetCheckTxConcurrency() *RequestCheckTx {
+	if x, ok := m.GetValue().(*Request_CheckTxConcurrency); ok {
+		return x.CheckTxConcurrency
+	}
+	return nil
+}
 func (m *Request) GetDeliverTx() *RequestDeliverTx {
 	if x, ok := m.GetValue().(*Request_DeliverTx); ok {
 		return x.DeliverTx
@@ -326,6 +336,7 @@ func (*Request) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error
 		(*Request_BeginBlock)(nil),
 		(*Request_CheckTx)(nil),
 		(*Request_CheckTxs)(nil),
+		(*Request_CheckTxConcurrency)(nil),
 		(*Request_DeliverTx)(nil),
 		(*Request_DeliverTxs)(nil),
 		(*Request_EndBlock)(nil),
@@ -388,6 +399,11 @@ func _Request_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
 	case *Request_CheckTxs:
 		_ = b.EncodeVarint(20<<3 | proto.WireBytes)
 		if err := b.EncodeMessage(x.CheckTxs); err != nil {
+			return err
+		}
+	case *Request_CheckTxConcurrency:
+		_ = b.EncodeVarint(22<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.CheckTxConcurrency); err != nil {
 			return err
 		}
 	case *Request_DeliverTx:
@@ -515,6 +531,14 @@ func _Request_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer
 		err := b.DecodeMessage(msg)
 		m.Value = &Request_CheckTxs{msg}
 		return true, err
+	case 22: // value.check_txConcurrency
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(RequestCheckTx)
+		err := b.DecodeMessage(msg)
+		m.Value = &Request_CheckTxConcurrency{msg}
+		return true, err
 	case 19: // value.deliver_tx
 		if wire != proto.WireBytes {
 			return true, proto.ErrInternalBadWireType
@@ -628,6 +652,11 @@ func _Request_OneofSizer(msg proto.Message) (n int) {
 	case *Request_CheckTxs:
 		s := proto.Size(x.CheckTxs)
 		n += proto.SizeVarint(20<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Request_CheckTxConcurrency:
+		s := proto.Size(x.CheckTxConcurrency)
+		n += proto.SizeVarint(22<<3 | proto.WireBytes)
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *Request_DeliverTx:
@@ -1878,9 +1907,9 @@ type Result struct {
 	TxID       int
 	TxVersion  string
 	Tx         []byte
-	TxV1Result types.TxV1Result
-	TxV2Result types.TxV2Result
-	TxV3Result types.TxV3Result
+	TxV1Result types2.TxV1Result
+	TxV2Result types2.TxV2Result
+	TxV3Result types2.TxV3Result
 	Errorlog   error
 }
 type ResponseCheckTxConcurrency struct {
@@ -2746,6 +2775,7 @@ type ABCIApplicationServer interface {
 	DeliverTxs(context.Context, *RequestDeliverTxs) (*ResponseDeliverTxs, error)
 	CheckTx(context.Context, *RequestCheckTx) (*ResponseCheckTx, error)
 	CheckTxs(context.Context, *RequestCheckTxs) (*ResponseCheckTxs, error)
+	CheckTxConcurrency(context.Context, *RequestCheckTx, chan<- *Response) error
 	Query(context.Context, *RequestQuery) (*ResponseQuery, error)
 	QueryEx(context.Context, *RequestQueryEx) (*ResponseQueryEx, error)
 	Commit(context.Context, *RequestCommit) (*ResponseCommit, error)
@@ -2903,7 +2933,29 @@ func _ABCIApplication_CheckTxs_Handler(srv interface{}, ctx context.Context, dec
 	}
 	return interceptor(ctx, in, info, handler)
 }
+func _ABCIApplication_CheckTxConcurrency_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(chan<- *Response)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	in2 := new(RequestCheckTx)
+	if err := dec(in2); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return nil, srv.(ABCIApplicationServer).CheckTxConcurrency(ctx, in2, *in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/types.ABCIApplication/CheckTxConcurrency",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return nil, srv.(ABCIApplicationServer).CheckTxConcurrency(ctx, req.(*RequestCheckTx), *in)
+	}
+	return interceptor(ctx, in, info, handler)
+}
 
+//responses chan<- *Response
 func _ABCIApplication_Query_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RequestQuery)
 	if err := dec(in); err != nil {

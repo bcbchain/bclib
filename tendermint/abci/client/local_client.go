@@ -15,6 +15,10 @@ type localClient struct {
 	Callback
 }
 
+func (app *localClient) CheckTxConcurrencyAsync(tx []byte) *ReqRes {
+	panic("implement me")
+}
+
 func (app *localClient) DeliverTxsAsync(txs [][]byte) *ReqRes {
 	panic("implement me")
 }

@@ -67,6 +67,7 @@ RETRY_LOOP:
 			if cli.mustConnect {
 				return err
 			}
+			cli.Logger.Info(fmt.Sprint("socket_client err=", err))
 			cli.Logger.Error(fmt.Sprintf("abci.socketClient failed to connect to %v.  Retrying...", cli.addr))
 			time.Sleep(time.Second * dialRetryIntervalSeconds)
 			continue RETRY_LOOP
@@ -253,8 +254,13 @@ func (cli *socketClient) DeliverTxsAsync(txs [][]byte) *ReqRes {
 func (cli *socketClient) CheckTxsAsync(txs [][]byte) *ReqRes {
 	return cli.queueRequest(types.ToRequestCheckTxs(txs))
 }
+
 func (cli *socketClient) CheckTxAsync(tx []byte) *ReqRes {
 	return cli.queueRequest(types.ToRequestCheckTx(tx))
+}
+
+func (cli *socketClient) CheckTxConcurrencyAsync(tx []byte) *ReqRes {
+	return cli.queueRequest(types.ToRequestCheckTxConcurrency(tx))
 }
 
 func (cli *socketClient) QueryAsync(req types.RequestQuery) *ReqRes {
@@ -438,6 +444,8 @@ func resMatchesReq(req *types.Request, res *types.Response) (ok bool) {
 	case *types.Request_CheckTx:
 		_, ok = res.Value.(*types.Response_CheckTx)
 	case *types.Request_CheckTxs:
+		_, ok = res.Value.(*types.Response_CheckTxs)
+	case *types.Request_CheckTxConcurrency:
 		_, ok = res.Value.(*types.Response_CheckTxs)
 	case *types.Request_Commit:
 		_, ok = res.Value.(*types.Response_Commit)

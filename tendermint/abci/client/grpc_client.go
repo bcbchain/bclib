@@ -29,6 +29,10 @@ type grpcClient struct {
 	resCb func(*types.Request, *types.Response) // listens to all callbacks
 }
 
+func (cli *grpcClient) CheckTxConcurrencyAsync(tx []byte) *ReqRes {
+	panic("implement me")
+}
+
 func NewGRPCClient(addr string, mustConnect bool) *grpcClient {
 	cli := &grpcClient{
 		addr:        addr,

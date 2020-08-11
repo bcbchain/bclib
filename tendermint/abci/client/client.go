@@ -32,6 +32,7 @@ type Client interface {
 	DeliverTxsAsync(txs [][]byte) *ReqRes
 	CheckTxAsync(tx []byte) *ReqRes
 	CheckTxsAsync(txs [][]byte) *ReqRes
+	CheckTxConcurrencyAsync(tx []byte) *ReqRes
 	QueryAsync(types.RequestQuery) *ReqRes
 	QueryExAsync(types.RequestQueryEx) *ReqRes
 	CommitAsync() *ReqRes

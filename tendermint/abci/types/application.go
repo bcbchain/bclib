@@ -18,6 +18,7 @@ type Application interface {
 	// Mempool Connection
 	CheckTx(tx []byte) ResponseCheckTx // Validate a tx for the mempool
 	CheckTxs(txs [][]byte) ResponseCheckTxs
+	CheckTxConcurrency(tx []byte, responses chan<- *Response)
 	// Consensus Connection
 	InitChain(RequestInitChain) ResponseInitChain    // Initialize blockchain with validators and other info from TendermintCore
 	BeginBlock(RequestBeginBlock) ResponseBeginBlock // Signals the beginning of a block
@@ -78,6 +79,10 @@ func (BaseApplication) CheckTxs(txs [][]byte) ResponseCheckTxs {
 	return responseCheckTxs
 }
 
+func (BaseApplication) CheckTxConcurrency(tx []byte, responses chan<- *Response) {
+	//panic("implement me")
+}
+
 func (BaseApplication) Commit() ResponseCommit {
 	return ResponseCommit{}
 }
@@ -123,6 +128,10 @@ type GRPCApplication struct {
 
 func NewGRPCApplication(app Application) *GRPCApplication {
 	return &GRPCApplication{app}
+}
+
+func (app *GRPCApplication) CheckTxConcurrency(ctx context.Context, req *RequestCheckTx, resChan chan<- *Response) error {
+	panic("implement me")
 }
 
 func (app *GRPCApplication) Echo(ctx context.Context, req *RequestEcho) (*ResponseEcho, error) {
