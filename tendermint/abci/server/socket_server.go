@@ -3,6 +3,7 @@ package server
 import (
 	"bufio"
 	"fmt"
+	"github.com/bcbchain/bclib/socket"
 	"io"
 	"net"
 	"os"
@@ -144,11 +145,12 @@ func (s *SocketServer) acceptConnectionsRoutine() {
 		closeConn := make(chan error, 5)              // Push to signal connection closed
 		responses := make(chan *types.Response, 1000) // A channel to buffer responses
 
+		responses = socket.SetResponse(responses)
+		s.Logger.Info("成功SetResponse")
 		// Read requests from conn and deal with them
 		go s.handleRequests(closeConn, conn, responses, dataChan)
 		// Pull responses from 'responses' and write them to conn.
 		go s.handleResponses(closeConn, conn, responses)
-
 		// Wait until signal to close connection
 		go s.waitForClose(closeConn, connID)
 	}
@@ -186,6 +188,7 @@ func (s *SocketServer) waitForClose(closeConn chan error, connID int) {
 		s.Logger.Error("Error in closing connection", "error", err)
 	}
 	//杀死bcchain进程
+	time.Sleep(time.Second * 5)
 	s.killBcchain()
 }
 
@@ -243,14 +246,14 @@ func (s *SocketServer) handleRequest(conn net.Conn, req *types.Request, response
 		res := s.app.DeliverTxs(r.DeliverTxs.Txs)
 		responses <- types.ToResponseDeliverTxs(res)
 	case *types.Request_CheckTx:
-		s.app.CheckTxConcurrency(r.CheckTx.Tx, responses)
+		s.app.CheckTxConcurrency(r.CheckTx.Tx)
 		// res := s.app.CheckTx(r.CheckTx.Tx)
 		// responses <- types.ToResponseCheckTx(res)
 	case *types.Request_CheckTxs:
 		res := s.app.CheckTxs(r.CheckTxs.Txs)
 		responses <- types.ToResponseCheckTxs(res)
 	case *types.Request_CheckTxConcurrency:
-		s.app.CheckTxConcurrency(r.CheckTxConcurrency.Tx, responses)
+		s.app.CheckTxConcurrency(r.CheckTxConcurrency.Tx)
 	case *types.Request_Commit:
 		res := s.app.Commit()
 		responses <- types.ToResponseCommit(res)
@@ -289,6 +292,7 @@ func (s *SocketServer) handleResponses(closeConn chan error, conn net.Conn, resp
 	var bufWriter = bufio.NewWriter(conn)
 	for {
 		var res = <-responses
+		s.Logger.Info("收到response", res)
 		err := types.WriteMessage(res, bufWriter)
 		if err != nil {
 			closeConn <- fmt.Errorf("Error writing message: %v", err.Error())
