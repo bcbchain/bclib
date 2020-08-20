@@ -2,8 +2,9 @@ package server
 
 import (
 	"bufio"
+	"container/list"
 	"fmt"
-	"github.com/bcbchain/bclib/socket"
+	abcicli "github.com/bcbchain/bclib/tendermint/abci/client"
 	"io"
 	"net"
 	"os"
@@ -145,12 +146,11 @@ func (s *SocketServer) acceptConnectionsRoutine() {
 		closeConn := make(chan error, 5)              // Push to signal connection closed
 		responses := make(chan *types.Response, 1000) // A channel to buffer responses
 
-		responses = socket.SetResponse(responses)
-		s.Logger.Info("成功SetResponse")
 		// Read requests from conn and deal with them
 		go s.handleRequests(closeConn, conn, responses, dataChan)
 		// Pull responses from 'responses' and write them to conn.
 		go s.handleResponses(closeConn, conn, responses)
+
 		// Wait until signal to close connection
 		go s.waitForClose(closeConn, connID)
 	}
@@ -188,7 +188,6 @@ func (s *SocketServer) waitForClose(closeConn chan error, connID int) {
 		s.Logger.Error("Error in closing connection", "error", err)
 	}
 	//杀死bcchain进程
-	time.Sleep(time.Second * 5)
 	s.killBcchain()
 }
 
@@ -207,6 +206,11 @@ func (s *SocketServer) killBcchain() {
 // Read requests from conn and deal with them
 func (s *SocketServer) handleRequests(closeConn chan error, conn net.Conn, responses chan<- *types.Response, dataChan chan bool) {
 	var bufReader = bufio.NewReader(conn)
+	reqSent := list.New()
+	isCheckConn := new(bool)
+	isDeliverConn := new(bool)
+	*isCheckConn = false
+	*isDeliverConn = false
 	for {
 		var req = &types.Request{}
 		err := types.ReadMessage(bufReader, req)
@@ -219,17 +223,22 @@ func (s *SocketServer) handleRequests(closeConn chan error, conn net.Conn, respo
 			return
 		}
 		dataChan <- true
-		s.handleRequest(conn, req, responses)
+		s.handleRequest(conn, req, responses, reqSent, isCheckConn, isDeliverConn)
 	}
 }
 
-func (s *SocketServer) handleRequest(conn net.Conn, req *types.Request, responses chan<- *types.Response) {
+func (s *SocketServer) handleRequest(conn net.Conn, req *types.Request, responses chan<- *types.Response, reqSent *list.List, isCheckConn *bool, isDeliverConn *bool) {
 
 	switch r := req.Value.(type) {
 	case *types.Request_Echo:
 		responses <- types.ToResponseEcho(r.Echo.Message)
 	case *types.Request_Flush:
-		responses <- types.ToResponseFlush()
+		if *isCheckConn == true || *isDeliverConn == true {
+			reqRes := abcicli.NewReqRes(req)
+			reqSent.PushBack(reqRes)
+		} else {
+			responses <- types.ToResponseFlush()
+		}
 	case *types.Request_Info:
 		addr := conn.RemoteAddr().String()
 		spl := strings.Split(addr, ":")
@@ -240,20 +249,29 @@ func (s *SocketServer) handleRequest(conn net.Conn, req *types.Request, response
 		res := s.app.SetOption(*r.SetOption)
 		responses <- types.ToResponseSetOption(res)
 	case *types.Request_DeliverTx:
-		res := s.app.DeliverTx(r.DeliverTx.Tx)
-		responses <- types.ToResponseDeliverTx(res)
-	case *types.Request_DeliverTxs:
-		res := s.app.DeliverTxs(r.DeliverTxs.Txs)
-		responses <- types.ToResponseDeliverTxs(res)
+		if *isDeliverConn == false {
+			*isDeliverConn = true
+		}
+		reqRes := abcicli.NewReqRes(req)
+		reqSent.PushBack(reqRes)
+		//go s.app.DeliverTxConcurrency(r.DeliverTx.Tx, reqRes)
+		go s.app.DeliverTxConcurrency(r.DeliverTx.Tx, *reqRes)
+		//s.app.DeliverTxConcurrency(r.DeliverTx.Tx)
+		//res := s.app.DeliverTx(r.DeliverTx.Tx)
+		//responses <- types.ToResponseDeliverTx(res)
 	case *types.Request_CheckTx:
-		s.app.CheckTxConcurrency(r.CheckTx.Tx)
-		// res := s.app.CheckTx(r.CheckTx.Tx)
-		// responses <- types.ToResponseCheckTx(res)
-	case *types.Request_CheckTxs:
-		res := s.app.CheckTxs(r.CheckTxs.Txs)
-		responses <- types.ToResponseCheckTxs(res)
-	case *types.Request_CheckTxConcurrency:
-		s.app.CheckTxConcurrency(r.CheckTxConcurrency.Tx)
+		if *isCheckConn == false {
+			*isCheckConn = true
+			// Read responses from done Reqres and write response to conn
+			go s.handleReqsent(responses, reqSent)
+		}
+
+		reqRes := abcicli.NewReqRes(req)
+		reqSent.PushBack(reqRes)
+		go func() {
+			res := s.app.CheckTx(r.CheckTx.Tx)
+			reqRes.SetResponse(types.ToResponseCheckTx(res))
+		}()
 	case *types.Request_Commit:
 		res := s.app.Commit()
 		responses <- types.ToResponseCommit(res)
@@ -270,8 +288,15 @@ func (s *SocketServer) handleRequest(conn net.Conn, req *types.Request, response
 		res := s.app.BeginBlock(*r.BeginBlock)
 		responses <- types.ToResponseBeginBlock(res)
 	case *types.Request_EndBlock:
-		res := s.app.EndBlock(*r.EndBlock)
-		responses <- types.ToResponseEndBlock(res)
+		if *isDeliverConn == true {
+			reqRes := abcicli.NewReqRes(req)
+			reqSent.PushBack(reqRes)
+		} else {
+			res := s.app.EndBlock(*r.EndBlock)
+			responses <- types.ToResponseEndBlock(res)
+		}
+		//res := s.app.EndBlock(*r.EndBlock)
+		//responses <- types.ToResponseEndBlock(res)
 	case *types.Request_CleanData:
 		res := s.app.CleanData()
 		responses <- types.ToResponseCleanData(res)
@@ -292,7 +317,6 @@ func (s *SocketServer) handleResponses(closeConn chan error, conn net.Conn, resp
 	var bufWriter = bufio.NewWriter(conn)
 	for {
 		var res = <-responses
-		s.Logger.Info("收到response", res)
 		err := types.WriteMessage(res, bufWriter)
 		if err != nil {
 			closeConn <- fmt.Errorf("Error writing message: %v", err.Error())
@@ -306,5 +330,30 @@ func (s *SocketServer) handleResponses(closeConn chan error, conn net.Conn, resp
 			}
 		}
 		//count++
+	}
+}
+
+func (s *SocketServer) handleReqsent(responses chan<- *types.Response, reqSent *list.List) {
+	for {
+		next := reqSent.Front()
+		if next == nil {
+			time.Sleep(time.Second)
+		} else {
+			reqres := next.Value.(*abcicli.ReqRes)
+			if reqres.Response != nil {
+				responses <- reqres.Response
+				reqSent.Remove(next)
+			}
+
+			switch r := reqres.Request.Value.(type) {
+			case *types.Request_Flush:
+				responses <- types.ToResponseFlush()
+				reqSent.Remove(next)
+			case *types.Request_EndBlock:
+				res := s.app.EndBlock(*r.EndBlock)
+				responses <- types.ToResponseEndBlock(res)
+				reqSent.Remove(next)
+			}
+		}
 	}
 }
