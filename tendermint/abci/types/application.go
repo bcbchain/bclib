@@ -17,16 +17,12 @@ type Application interface {
 
 	// Mempool Connection
 	CheckTx(tx []byte) ResponseCheckTx // Validate a tx for the mempool
-	CheckTxs(txs [][]byte) ResponseCheckTxs
-	CheckTxConcurrency(tx []byte)
 	// Consensus Connection
-	InitChain(RequestInitChain) ResponseInitChain                                 // Initialize blockchain with validators and other info from TendermintCore
-	BeginBlock(RequestBeginBlock) ResponseBeginBlock                              // Signals the beginning of a block
-	BeginBlockConcurrency(RequestBeginBlock, chan<- *Response) ResponseBeginBlock // Signals the beginning of a block currency
-	DeliverTx(tx []byte) ResponseDeliverTx                                        // Deliver a tx for full processing
-	DeliverTxs(txs [][]byte) ResponseDeliverTxs
-	EndBlock(RequestEndBlock) ResponseEndBlock // Signals the end of a block, returns changes to the validator set
-	Commit() ResponseCommit                    // Commit the state and return the application Merkle root hash
+	InitChain(RequestInitChain) ResponseInitChain    // Initialize blockchain with validators and other info from TendermintCore
+	BeginBlock(RequestBeginBlock) ResponseBeginBlock // Signals the beginning of a block
+	DeliverTx(tx []byte) ResponseDeliverTx           // Deliver a tx for full processing
+	EndBlock(RequestEndBlock) ResponseEndBlock       // Signals the end of a block, returns changes to the validator set
+	Commit() ResponseCommit                          // Commit the state and return the application Merkle root hash
 
 	// Clear all bcchain data when side chain genesis
 	CleanData() ResponseCleanData
@@ -67,31 +63,9 @@ func (BaseApplication) SetOption(req RequestSetOption) ResponseSetOption {
 func (BaseApplication) DeliverTx(tx []byte) ResponseDeliverTx {
 	return ResponseDeliverTx{Code: CodeTypeOK}
 }
-func (BaseApplication) DeliverTxs(txs [][]byte) ResponseDeliverTxs {
-	DeliverTxs := []ResponseDeliverTx{}
-	for i, _ := range txs {
-		DeliverTxs[i] = ResponseDeliverTx{Code: CodeTypeOK}
-	}
-	responseDeliverTxs := ResponseDeliverTxs{DeliverTxs}
-	return responseDeliverTxs
-}
 
 func (BaseApplication) CheckTx(tx []byte) ResponseCheckTx {
 	return ResponseCheckTx{Code: CodeTypeOK}
-}
-func (BaseApplication) CheckTxs(txs [][]byte) ResponseCheckTxs {
-	CheckTxs := []ResponseCheckTx{}
-	for i, _ := range txs {
-		CheckTxs[i] = ResponseCheckTx{Code: CodeTypeOK}
-	}
-	responseCheckTxs := ResponseCheckTxs{
-		CheckTxs,
-	}
-	return responseCheckTxs
-}
-
-func (BaseApplication) CheckTxConcurrency(tx []byte) {
-	//panic("implement me")
 }
 
 func (BaseApplication) Commit() ResponseCommit {
@@ -141,10 +115,6 @@ func NewGRPCApplication(app Application) *GRPCApplication {
 	return &GRPCApplication{app}
 }
 
-func (app *GRPCApplication) CheckTxConcurrency(ctx context.Context, req *RequestCheckTx, resChan chan<- *Response) error {
-	panic("implement me")
-}
-
 func (app *GRPCApplication) Echo(ctx context.Context, req *RequestEcho) (*ResponseEcho, error) {
 	return &ResponseEcho{req.Message}, nil
 }
@@ -163,18 +133,8 @@ func (app *GRPCApplication) SetOption(ctx context.Context, req *RequestSetOption
 	return &res, nil
 }
 
-func (app *GRPCApplication) DeliverTxs(ctx context.Context, req *RequestDeliverTxs) (*ResponseDeliverTxs, error) {
-	res := app.app.DeliverTxs(req.Txs)
-	return &res, nil
-}
-
 func (app *GRPCApplication) DeliverTx(ctx context.Context, req *RequestDeliverTx) (*ResponseDeliverTx, error) {
 	res := app.app.DeliverTx(req.Tx)
-	return &res, nil
-}
-
-func (app *GRPCApplication) CheckTxs(ctx context.Context, req *RequestCheckTxs) (*ResponseCheckTxs, error) {
-	res := app.app.CheckTxs(req.Txs)
 	return &res, nil
 }
 
