@@ -49,15 +49,14 @@ package types
 import (
 	"encoding/json"
 	"fmt"
-	types2 "github.com/bcbchain/bclib/tx/types"
-	"math"
-
 	"github.com/bcbchain/bclib/tendermint/go-crypto"
 	"github.com/bcbchain/bclib/tendermint/tmlibs/common"
+	types2 "github.com/bcbchain/bclib/tx/types"
 	_ "github.com/gogo/protobuf/gogoproto"
 	"github.com/gogo/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -148,7 +147,7 @@ type Request_CheckTxs struct {
 	CheckTxs *RequestCheckTxs `protobuf:"bytes,20,opt,name=check_txs,json=checkTxs,oneof"`
 }
 type Request_CheckTxConcurrency struct {
-	CheckTxConcurrency *RequestCheckTx `protobuf:"bytes,22,opt,name=check_txConcurrency,json=checkTxs,oneof"`
+	CheckTxConcurrency *RequestCheckTx `protobuf:"bytes,22,opt,name=check_txConcurrency,json=checkTxConcurrency,oneof"`
 }
 type Request_DeliverTx struct {
 	DeliverTx *RequestDeliverTx `protobuf:"bytes,19,opt,name=deliver_tx,json=deliverTx,oneof"`
@@ -1023,6 +1022,8 @@ func (m *Response) Reset()                    { *m = Response{} }
 func (m *Response) String() string            { return proto.CompactTextString(m) }
 func (*Response) ProtoMessage()               {}
 func (*Response) Descriptor() ([]byte, []int) { return fileDescriptorTypes, []int{12} }
+
+var ResponseChan = make(chan *Response, 1000)
 
 type isResponse_Value interface {
 	isResponse_Value()
@@ -1904,13 +1905,15 @@ func (*ResponseBeginBlock) ProtoMessage()               {}
 func (*ResponseBeginBlock) Descriptor() ([]byte, []int) { return fileDescriptorTypes, []int{20} }
 
 type Result struct {
-	TxID       int
-	TxVersion  string
-	Tx         []byte
-	TxV1Result types2.TxV1Result
-	TxV2Result types2.TxV2Result
-	TxV3Result types2.TxV3Result
-	Errorlog   error
+	TxID       int64             `json:"txId,omitempty"`     //每一个区块transaction中的TxID,提供给数据库层
+	TxOrder    int               `json:"tx_order,omitempty"` //每一批交易中的交易序号
+	TxVersion  string            `json:"txVersion,omitempty"`
+	Tx         []byte            `json:"tx,omitempty"`
+	TxV1Result types2.TxV1Result `json:"txV1Result,omitempty"`
+	TxV2Result types2.TxV2Result `json:"txV2Result,omitempty"`
+	TxV3Result types2.TxV3Result `json:"txV3Result,omitempty"`
+	Errorlog   error             `json:"errorlog,omitempty"`
+	Response   *Response
 }
 type ResponseCheckTxConcurrency struct {
 	ResultID        int
@@ -2001,7 +2004,7 @@ func (*ResponseCheckTxs) ProtoMessage()               {}
 func (*ResponseCheckTxs) Descriptor() ([]byte, []int) { return fileDescriptorTypes, []int{21} }
 
 type ResponseDeliverTxConcurrency struct {
-	ResultID          int
+	Txorder           int
 	ResponseDeliverTx ResponseDeliverTx
 }
 

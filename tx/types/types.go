@@ -10,6 +10,7 @@ type TxV1Result struct {
 	FromAddr    crypto.Address
 	Pubkey      crypto.PubKeyEd25519
 	Transaction tx1.Transaction
+	BFailed     bool
 }
 
 type TxV2Result struct {
@@ -20,4 +21,9 @@ type TxV2Result struct {
 type TxV3Result struct {
 	Pubkey      crypto.PubKeyEd25519
 	Transaction type2.Transaction
+}
+
+type BCError struct {
+	ErrorCode uint32 // Error code
+	ErrorDesc string // Error description
 }

@@ -44,6 +44,7 @@ func readProtoMsg(r io.Reader, msg proto.Message, maxSize int) error {
 	if _, err := io.ReadFull(reader, buf); err != nil {
 		return err
 	}
+	//fmt.Println("收到的buf", string(buf))
 	return proto.Unmarshal(buf, msg)
 }
 

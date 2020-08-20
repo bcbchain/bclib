@@ -31,7 +31,15 @@ type PersistentKVStoreApplication struct {
 	logger log.Logger
 }
 
-func (app *PersistentKVStoreApplication) CheckTxConcurrency(tx []byte, responses chan<- *types.Response) {
+func (app *PersistentKVStoreApplication) BeginBlockConcurrency(types.RequestBeginBlock, chan<- *types.Response) types.ResponseBeginBlock {
+	panic("implement me")
+}
+
+func (app *PersistentKVStoreApplication) DeliverTxConcurrency(tx []byte, v interface{}) {
+	panic("implement me")
+}
+
+func (app *PersistentKVStoreApplication) CheckTxConcurrency(tx []byte) {
 	panic("implement me")
 }
 
