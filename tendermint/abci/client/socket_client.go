@@ -106,6 +106,7 @@ func (cli *socketClient) StopForError(err error) {
 	cli.mtx.Unlock()
 
 	cli.Logger.Error(fmt.Sprintf("Stopping abci.socketClient for error: %v", err.Error()))
+	time.Sleep(time.Second * 5)
 	cli.Stop()
 	err0 := cmn.Kill()
 	if err0 != nil {
@@ -258,7 +259,6 @@ func (cli *socketClient) CheckTxsAsync(txs [][]byte) *ReqRes {
 func (cli *socketClient) CheckTxAsync(tx []byte) *ReqRes {
 	return cli.queueRequest(types.ToRequestCheckTx(tx))
 }
-
 func (cli *socketClient) CheckTxConcurrencyAsync(tx []byte) *ReqRes {
 	return cli.queueRequest(types.ToRequestCheckTxConcurrency(tx))
 }
@@ -446,7 +446,7 @@ func resMatchesReq(req *types.Request, res *types.Response) (ok bool) {
 	case *types.Request_CheckTxs:
 		_, ok = res.Value.(*types.Response_CheckTxs)
 	case *types.Request_CheckTxConcurrency:
-		_, ok = res.Value.(*types.Response_CheckTxs)
+		_, ok = res.Value.(*types.Response_CheckTx)
 	case *types.Request_Commit:
 		_, ok = res.Value.(*types.Response_Commit)
 	case *types.Request_Query:
