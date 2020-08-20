@@ -126,6 +126,12 @@ func (reqRes *ReqRes) GetCallback() func(*types.Response) {
 	return reqRes.cb
 }
 
+func (reqRes *ReqRes) SetResponse(res *types.Response) {
+	reqRes.mtx.Lock()
+	reqRes.Response = res
+	reqRes.mtx.Unlock()
+}
+
 // NOTE: it should be safe to read reqRes.cb without locks after this.
 func (reqRes *ReqRes) SetDone() {
 	reqRes.mtx.Lock()
