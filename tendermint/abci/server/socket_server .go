@@ -208,9 +208,9 @@ func (s *SocketServer) handleRequests(closeConn chan error, conn net.Conn, respo
 	var bufReader = bufio.NewReader(conn)
 	reqSent := list.New()
 	isCheckConn := new(bool)
-	isDeliverConn := new(bool)
 	*isCheckConn = false
-	*isDeliverConn = false
+
+	var deliverTxs []string
 	for {
 		var req = &types.Request{}
 		err := types.ReadMessage(bufReader, req)
@@ -223,17 +223,18 @@ func (s *SocketServer) handleRequests(closeConn chan error, conn net.Conn, respo
 			return
 		}
 		dataChan <- true
-		s.handleRequest(conn, req, responses, reqSent, isCheckConn, isDeliverConn)
+		s.handleRequest(conn, req, responses, reqSent, isCheckConn, deliverTxs)
 	}
 }
 
-func (s *SocketServer) handleRequest(conn net.Conn, req *types.Request, responses chan<- *types.Response, reqSent *list.List, isCheckConn *bool, isDeliverConn *bool) {
+func (s *SocketServer) handleRequest(conn net.Conn, req *types.Request, responses chan<- *types.Response,
+	reqSent *list.List, isCheckConn *bool, deliverTxs []string) {
 
 	switch r := req.Value.(type) {
 	case *types.Request_Echo:
 		responses <- types.ToResponseEcho(r.Echo.Message)
 	case *types.Request_Flush:
-		if *isCheckConn == true || *isDeliverConn == true {
+		if *isCheckConn == true {
 			reqRes := abcicli.NewReqRes(req)
 			reqSent.PushBack(reqRes)
 		} else {
@@ -249,16 +250,9 @@ func (s *SocketServer) handleRequest(conn net.Conn, req *types.Request, response
 		res := s.app.SetOption(*r.SetOption)
 		responses <- types.ToResponseSetOption(res)
 	case *types.Request_DeliverTx:
-		if *isDeliverConn == false {
-			*isDeliverConn = true
-		}
-		reqRes := abcicli.NewReqRes(req)
-		reqSent.PushBack(reqRes)
-		//go s.app.DeliverTxConcurrency(r.DeliverTx.Tx, reqRes)
-		go s.app.DeliverTxConcurrency(r.DeliverTx.Tx, *reqRes)
-		//s.app.DeliverTxConcurrency(r.DeliverTx.Tx)
 		//res := s.app.DeliverTx(r.DeliverTx.Tx)
 		//responses <- types.ToResponseDeliverTx(res)
+		deliverTxs = append(deliverTxs, string(r.DeliverTx.Tx))
 	case *types.Request_CheckTx:
 		if *isCheckConn == false {
 			*isCheckConn = true
@@ -285,18 +279,18 @@ func (s *SocketServer) handleRequest(conn net.Conn, req *types.Request, response
 		res := s.app.InitChain(*r.InitChain)
 		responses <- types.ToResponseInitChain(res)
 	case *types.Request_BeginBlock:
+		deliverTxs = make([]string, 0)
 		res := s.app.BeginBlock(*r.BeginBlock)
 		responses <- types.ToResponseBeginBlock(res)
 	case *types.Request_EndBlock:
-		if *isDeliverConn == true {
-			reqRes := abcicli.NewReqRes(req)
-			reqSent.PushBack(reqRes)
-		} else {
-			res := s.app.EndBlock(*r.EndBlock)
-			responses <- types.ToResponseEndBlock(res)
+		if len(deliverTxs) > 0 {
+			ress := s.app.DeliverTxs(deliverTxs)
+			for _, res := range ress {
+				responses <- types.ToResponseDeliverTx(res)
+			}
 		}
-		//res := s.app.EndBlock(*r.EndBlock)
-		//responses <- types.ToResponseEndBlock(res)
+		res := s.app.EndBlock(*r.EndBlock)
+		responses <- types.ToResponseEndBlock(res)
 	case *types.Request_CleanData:
 		res := s.app.CleanData()
 		responses <- types.ToResponseCleanData(res)

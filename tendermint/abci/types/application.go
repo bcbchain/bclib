@@ -18,18 +18,17 @@ type Application interface {
 	// Mempool Connection
 	CheckTx(tx []byte) ResponseCheckTx // Validate a tx for the mempool
 	// Consensus Connection
-	InitChain(RequestInitChain) ResponseInitChain    // Initialize blockchain with validators and other info from TendermintCore
-	BeginBlock(RequestBeginBlock) ResponseBeginBlock // Signals the beginning of a block
-	DeliverTx(tx []byte) ResponseDeliverTx           // Deliver a tx for full processing
-	EndBlock(RequestEndBlock) ResponseEndBlock       // Signals the end of a block, returns changes to the validator set
-	Commit() ResponseCommit                          // Commit the state and return the application Merkle root hash
+	InitChain(RequestInitChain) ResponseInitChain       // Initialize blockchain with validators and other info from TendermintCore
+	BeginBlock(RequestBeginBlock) ResponseBeginBlock    // Signals the beginning of a block
+	DeliverTx(tx []byte) ResponseDeliverTx              // Deliver a tx for full processing
+	DeliverTxs(deliverTxs []string) []ResponseDeliverTx // Deliver all tx in block for full processing
+	EndBlock(RequestEndBlock) ResponseEndBlock          // Signals the end of a block, returns changes to the validator set
+	Commit() ResponseCommit                             // Commit the state and return the application Merkle root hash
 
 	// Clear all bcchain data when side chain genesis
 	CleanData() ResponseCleanData
 	GetGenesis() ResponseGetGenesis
 	Rollback() ResponseRollback
-	//DeliverTxConcurrency(tx []byte, res *abcicli.ReqRes)
-	DeliverTxConcurrency(tx []byte, v interface{})
 }
 
 //-------------------------------------------------------
@@ -38,14 +37,6 @@ type Application interface {
 var _ Application = (*BaseApplication)(nil)
 
 type BaseApplication struct {
-}
-
-func (BaseApplication) DeliverTxConcurrency(tx []byte, v interface{}) {
-	panic("implement me")
-}
-
-func (BaseApplication) BeginBlockConcurrency(RequestBeginBlock, chan<- *Response) ResponseBeginBlock {
-	panic("implement me")
 }
 
 func NewBaseApplication() *BaseApplication {
@@ -62,6 +53,10 @@ func (BaseApplication) SetOption(req RequestSetOption) ResponseSetOption {
 
 func (BaseApplication) DeliverTx(tx []byte) ResponseDeliverTx {
 	return ResponseDeliverTx{Code: CodeTypeOK}
+}
+
+func (BaseApplication) DeliverTxs(deliverTxs []string) []ResponseDeliverTx {
+	return nil
 }
 
 func (BaseApplication) CheckTx(tx []byte) ResponseCheckTx {

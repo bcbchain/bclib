@@ -29,10 +29,6 @@ type grpcClient struct {
 	resCb func(*types.Request, *types.Response) // listens to all callbacks
 }
 
-func (cli *grpcClient) CheckTxConcurrencyAsync(tx []byte) *ReqRes {
-	panic("implement me")
-}
-
 func NewGRPCClient(addr string, mustConnect bool) *grpcClient {
 	cli := &grpcClient{
 		addr:        addr,
@@ -170,23 +166,6 @@ func (cli *grpcClient) DeliverTxAsync(tx []byte) *ReqRes {
 		cli.StopForError(err)
 	}
 	return cli.finishAsyncCall(req, &types.Response{&types.Response_DeliverTx{res}})
-}
-func (cli *grpcClient) DeliverTxsAsync(txs [][]byte) *ReqRes {
-	req := types.ToRequestDeliverTxs(txs)
-	res, err := cli.client.DeliverTxs(context.Background(), req.GetDeliverTxs(), grpc.FailFast(true))
-	if err != nil {
-		cli.StopForError(err)
-	}
-	return cli.finishAsyncCall(req, &types.Response{&types.Response_DeliverTxs{res}})
-}
-
-func (cli *grpcClient) CheckTxsAsync(txs [][]byte) *ReqRes {
-	req := types.ToRequestCheckTxs(txs)
-	res, err := cli.client.CheckTxs(context.Background(), req.GetCheckTxs(), grpc.FailFast(true))
-	if err != nil {
-		cli.StopForError(err)
-	}
-	return cli.finishAsyncCall(req, &types.Response{&types.Response_CheckTxs{res}})
 }
 
 func (cli *grpcClient) CheckTxAsync(tx []byte) *ReqRes {

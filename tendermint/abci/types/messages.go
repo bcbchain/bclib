@@ -99,25 +99,10 @@ func ToRequestDeliverTx(tx []byte) *Request {
 		Value: &Request_DeliverTx{&RequestDeliverTx{tx}},
 	}
 }
-func ToRequestDeliverTxs(txs [][]byte) *Request {
-	return &Request{
-		Value: &Request_DeliverTxs{&RequestDeliverTxs{txs}},
-	}
-}
 
 func ToRequestCheckTx(tx []byte) *Request {
 	return &Request{
 		Value: &Request_CheckTx{&RequestCheckTx{tx}},
-	}
-}
-func ToRequestCheckTxs(txs [][]byte) *Request {
-	return &Request{
-		Value: &Request_CheckTxs{&RequestCheckTxs{txs}},
-	}
-}
-func ToRequestCheckTxConcurrency(tx []byte) *Request {
-	return &Request{
-		Value: &Request_CheckTxConcurrency{&RequestCheckTx{tx}},
 	}
 }
 
@@ -212,19 +197,9 @@ func ToResponseDeliverTx(res ResponseDeliverTx) *Response {
 		Value: &Response_DeliverTx{&res},
 	}
 }
-func ToResponseDeliverTxs(res ResponseDeliverTxs) *Response {
-	return &Response{
-		Value: &Response_DeliverTxs{&res},
-	}
-}
 func ToResponseCheckTx(res ResponseCheckTx) *Response {
 	return &Response{
 		Value: &Response_CheckTx{&res},
-	}
-}
-func ToResponseCheckTxs(res ResponseCheckTxs) *Response {
-	return &Response{
-		Value: &Response_CheckTxs{&res},
 	}
 }
 

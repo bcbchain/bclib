@@ -143,17 +143,8 @@ type Request_BeginBlock struct {
 type Request_CheckTx struct {
 	CheckTx *RequestCheckTx `protobuf:"bytes,9,opt,name=check_tx,json=checkTx,oneof"`
 }
-type Request_CheckTxs struct {
-	CheckTxs *RequestCheckTxs `protobuf:"bytes,20,opt,name=check_txs,json=checkTxs,oneof"`
-}
-type Request_CheckTxConcurrency struct {
-	CheckTxConcurrency *RequestCheckTx `protobuf:"bytes,22,opt,name=check_txConcurrency,json=checkTxConcurrency,oneof"`
-}
 type Request_DeliverTx struct {
 	DeliverTx *RequestDeliverTx `protobuf:"bytes,19,opt,name=deliver_tx,json=deliverTx,oneof"`
-}
-type Request_DeliverTxs struct {
-	DeliverTxs *RequestDeliverTxs `protobuf:"bytes,21,opt,name=deliver_txs,json=deliverTxs,oneof"`
 }
 type Request_EndBlock struct {
 	EndBlock *RequestEndBlock `protobuf:"bytes,11,opt,name=end_block,json=endBlock,oneof"`
@@ -174,24 +165,21 @@ type Request_Rollback struct {
 	Rollback *RequestRollback `protobuf:"bytes,16,opt,name=rollback,oneof"`
 }
 
-func (*Request_Echo) isRequest_Value()               {}
-func (*Request_Flush) isRequest_Value()              {}
-func (*Request_Info) isRequest_Value()               {}
-func (*Request_SetOption) isRequest_Value()          {}
-func (*Request_InitChain) isRequest_Value()          {}
-func (*Request_Query) isRequest_Value()              {}
-func (*Request_QueryEx) isRequest_Value()            {}
-func (*Request_BeginBlock) isRequest_Value()         {}
-func (*Request_CheckTx) isRequest_Value()            {}
-func (*Request_CheckTxs) isRequest_Value()           {}
-func (*Request_CheckTxConcurrency) isRequest_Value() {}
-func (*Request_DeliverTx) isRequest_Value()          {}
-func (*Request_DeliverTxs) isRequest_Value()         {}
-func (*Request_EndBlock) isRequest_Value()           {}
-func (*Request_Commit) isRequest_Value()             {}
-func (*Request_CleanData) isRequest_Value()          {}
-func (*Request_GetGenesis) isRequest_Value()         {}
-func (*Request_Rollback) isRequest_Value()           {}
+func (*Request_Echo) isRequest_Value()       {}
+func (*Request_Flush) isRequest_Value()      {}
+func (*Request_Info) isRequest_Value()       {}
+func (*Request_SetOption) isRequest_Value()  {}
+func (*Request_InitChain) isRequest_Value()  {}
+func (*Request_Query) isRequest_Value()      {}
+func (*Request_QueryEx) isRequest_Value()    {}
+func (*Request_BeginBlock) isRequest_Value() {}
+func (*Request_CheckTx) isRequest_Value()    {}
+func (*Request_DeliverTx) isRequest_Value()  {}
+func (*Request_EndBlock) isRequest_Value()   {}
+func (*Request_Commit) isRequest_Value()     {}
+func (*Request_CleanData) isRequest_Value()  {}
+func (*Request_GetGenesis) isRequest_Value() {}
+func (*Request_Rollback) isRequest_Value()   {}
 
 func (m *Request) GetValue() isRequest_Value {
 	if m != nil {
@@ -262,27 +250,9 @@ func (m *Request) GetCheckTx() *RequestCheckTx {
 	}
 	return nil
 }
-func (m *Request) GetCheckTxs() *RequestCheckTxs {
-	if x, ok := m.GetValue().(*Request_CheckTxs); ok {
-		return x.CheckTxs
-	}
-	return nil
-}
-func (m *Request) GetCheckTxConcurrency() *RequestCheckTx {
-	if x, ok := m.GetValue().(*Request_CheckTxConcurrency); ok {
-		return x.CheckTxConcurrency
-	}
-	return nil
-}
 func (m *Request) GetDeliverTx() *RequestDeliverTx {
 	if x, ok := m.GetValue().(*Request_DeliverTx); ok {
 		return x.DeliverTx
-	}
-	return nil
-}
-func (m *Request) GetDeliverTxs() *RequestDeliverTxs {
-	if x, ok := m.GetValue().(*Request_DeliverTxs); ok {
-		return x.DeliverTxs
 	}
 	return nil
 }
@@ -334,10 +304,7 @@ func (*Request) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error
 		(*Request_QueryEx)(nil),
 		(*Request_BeginBlock)(nil),
 		(*Request_CheckTx)(nil),
-		(*Request_CheckTxs)(nil),
-		(*Request_CheckTxConcurrency)(nil),
 		(*Request_DeliverTx)(nil),
-		(*Request_DeliverTxs)(nil),
 		(*Request_EndBlock)(nil),
 		(*Request_Commit)(nil),
 		(*Request_CleanData)(nil),
@@ -395,24 +362,9 @@ func _Request_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
 		if err := b.EncodeMessage(x.CheckTx); err != nil {
 			return err
 		}
-	case *Request_CheckTxs:
-		_ = b.EncodeVarint(20<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.CheckTxs); err != nil {
-			return err
-		}
-	case *Request_CheckTxConcurrency:
-		_ = b.EncodeVarint(22<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.CheckTxConcurrency); err != nil {
-			return err
-		}
 	case *Request_DeliverTx:
 		_ = b.EncodeVarint(19<<3 | proto.WireBytes)
 		if err := b.EncodeMessage(x.DeliverTx); err != nil {
-			return err
-		}
-	case *Request_DeliverTxs:
-		_ = b.EncodeVarint(21<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.DeliverTxs); err != nil {
 			return err
 		}
 	case *Request_EndBlock:
@@ -522,22 +474,6 @@ func _Request_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer
 		err := b.DecodeMessage(msg)
 		m.Value = &Request_CheckTx{msg}
 		return true, err
-	case 20: // value.check_txs
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(RequestCheckTxs)
-		err := b.DecodeMessage(msg)
-		m.Value = &Request_CheckTxs{msg}
-		return true, err
-	case 22: // value.check_txConcurrency
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(RequestCheckTx)
-		err := b.DecodeMessage(msg)
-		m.Value = &Request_CheckTxConcurrency{msg}
-		return true, err
 	case 19: // value.deliver_tx
 		if wire != proto.WireBytes {
 			return true, proto.ErrInternalBadWireType
@@ -545,14 +481,6 @@ func _Request_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer
 		msg := new(RequestDeliverTx)
 		err := b.DecodeMessage(msg)
 		m.Value = &Request_DeliverTx{msg}
-		return true, err
-	case 21: // value.deliver_txs
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(RequestDeliverTxs)
-		err := b.DecodeMessage(msg)
-		m.Value = &Request_DeliverTxs{msg}
 		return true, err
 	case 11: // value.end_block
 		if wire != proto.WireBytes {
@@ -648,24 +576,9 @@ func _Request_OneofSizer(msg proto.Message) (n int) {
 		n += proto.SizeVarint(9<<3 | proto.WireBytes)
 		n += proto.SizeVarint(uint64(s))
 		n += s
-	case *Request_CheckTxs:
-		s := proto.Size(x.CheckTxs)
-		n += proto.SizeVarint(20<<3 | proto.WireBytes)
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Request_CheckTxConcurrency:
-		s := proto.Size(x.CheckTxConcurrency)
-		n += proto.SizeVarint(22<<3 | proto.WireBytes)
-		n += proto.SizeVarint(uint64(s))
-		n += s
 	case *Request_DeliverTx:
 		s := proto.Size(x.DeliverTx)
 		n += proto.SizeVarint(19<<3 | proto.WireBytes)
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Request_DeliverTxs:
-		s := proto.Size(x.DeliverTxs)
-		n += proto.SizeVarint(21<<3 | proto.WireBytes)
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *Request_EndBlock:
@@ -1059,14 +972,8 @@ type Response_BeginBlock struct {
 type Response_CheckTx struct {
 	CheckTx *ResponseCheckTx `protobuf:"bytes,9,opt,name=check_tx,json=checkTx,oneof"`
 }
-type Response_CheckTxs struct {
-	CheckTxs *ResponseCheckTxs `protobuf:"bytes,17,opt,name=check_txs,json=checkTxs,oneof"`
-}
 type Response_DeliverTx struct {
 	DeliverTx *ResponseDeliverTx `protobuf:"bytes,10,opt,name=deliver_tx,json=deliverTx,oneof"`
-}
-type Response_DeliverTxs struct {
-	DeliverTxs *ResponseDeliverTxs `protobuf:"bytes,18,opt,name=deliver_txs,json=deliverTxs,oneof"`
 }
 type Response_EndBlock struct {
 	EndBlock *ResponseEndBlock `protobuf:"bytes,11,opt,name=end_block,json=endBlock,oneof"`
@@ -1097,9 +1004,7 @@ func (*Response_Query) isResponse_Value()      {}
 func (*Response_QueryEx) isResponse_Value()    {}
 func (*Response_BeginBlock) isResponse_Value() {}
 func (*Response_CheckTx) isResponse_Value()    {}
-func (*Response_CheckTxs) isResponse_Value()   {}
 func (*Response_DeliverTx) isResponse_Value()  {}
-func (*Response_DeliverTxs) isResponse_Value() {}
 func (*Response_EndBlock) isResponse_Value()   {}
 func (*Response_Commit) isResponse_Value()     {}
 func (*Response_CleanData) isResponse_Value()  {}
@@ -1183,23 +1088,9 @@ func (m *Response) GetCheckTx() *ResponseCheckTx {
 	return nil
 }
 
-func (m *Response) GetCheckTxs() *ResponseCheckTxs {
-	if x, ok := m.GetValue().(*Response_CheckTxs); ok {
-		return x.CheckTxs
-	}
-	return nil
-}
-
 func (m *Response) GetDeliverTx() *ResponseDeliverTx {
 	if x, ok := m.GetValue().(*Response_DeliverTx); ok {
 		return x.DeliverTx
-	}
-	return nil
-}
-
-func (m *Response) GetDeliverTxs() *ResponseDeliverTxs {
-	if x, ok := m.GetValue().(*Response_DeliverTxs); ok {
-		return x.DeliverTxs
 	}
 	return nil
 }
@@ -1252,9 +1143,7 @@ func (*Response) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) erro
 		(*Response_QueryEx)(nil),
 		(*Response_BeginBlock)(nil),
 		(*Response_CheckTx)(nil),
-		(*Response_CheckTxs)(nil),
 		(*Response_DeliverTx)(nil),
-		(*Response_DeliverTxs)(nil),
 		(*Response_EndBlock)(nil),
 		(*Response_Commit)(nil),
 		(*Response_CleanData)(nil),
@@ -1317,19 +1206,9 @@ func _Response_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
 		if err := b.EncodeMessage(x.CheckTx); err != nil {
 			return err
 		}
-	case *Response_CheckTxs:
-		_ = b.EncodeVarint(17<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.CheckTxs); err != nil {
-			return err
-		}
 	case *Response_DeliverTx:
 		_ = b.EncodeVarint(10<<3 | proto.WireBytes)
 		if err := b.EncodeMessage(x.DeliverTx); err != nil {
-			return err
-		}
-	case *Response_DeliverTxs:
-		_ = b.EncodeVarint(18<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.DeliverTxs); err != nil {
 			return err
 		}
 	case *Response_EndBlock:
@@ -1495,22 +1374,6 @@ func _Response_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffe
 		err := b.DecodeMessage(msg)
 		m.Value = &Response_Rollback{msg}
 		return true, err
-	case 17: // value.check_txs
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(ResponseCheckTxs)
-		err := b.DecodeMessage(msg)
-		m.Value = &Response_CheckTxs{msg}
-		return true, err
-	case 18: // value.deliver_txs
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(ResponseDeliverTxs)
-		err := b.DecodeMessage(msg)
-		m.Value = &Response_DeliverTxs{msg}
-		return true, err
 	default:
 		return false, nil
 	}
@@ -1570,19 +1433,9 @@ func _Response_OneofSizer(msg proto.Message) (n int) {
 		n += proto.SizeVarint(9<<3 | proto.WireBytes)
 		n += proto.SizeVarint(uint64(s))
 		n += s
-	case *Response_CheckTxs:
-		s := proto.Size(x.CheckTxs)
-		n += proto.SizeVarint(17<<3 | proto.WireBytes)
-		n += proto.SizeVarint(uint64(s))
-		n += s
 	case *Response_DeliverTx:
 		s := proto.Size(x.DeliverTx)
 		n += proto.SizeVarint(10<<3 | proto.WireBytes)
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Response_DeliverTxs:
-		s := proto.Size(x.DeliverTxs)
-		n += proto.SizeVarint(18<<3 | proto.WireBytes)
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *Response_EndBlock:
@@ -2082,15 +1935,6 @@ func (m *ResponseDeliverTx) GetFee() uint64 {
 	return 0
 }
 
-type ResponseDeliverTxs struct {
-	ResponseDeliverTxs []ResponseDeliverTx `protobuf:"bytes,1,opt,name=responseDeliverTxs,proto3" json:"responseDeliverTxs,omitempty"`
-}
-
-func (m *ResponseDeliverTxs) Reset()                    { *m = ResponseDeliverTxs{} }
-func (m *ResponseDeliverTxs) String() string            { return proto.CompactTextString(m) }
-func (*ResponseDeliverTxs) ProtoMessage()               {}
-func (*ResponseDeliverTxs) Descriptor() ([]byte, []int) { return fileDescriptorTypes, []int{22} }
-
 type ResponseCleanData struct {
 	Code int64  `protobuf:"varint,1,opt,name=code,json=code" json:"code"`
 	Log  string `protobuf:"bytes,2,rep,name=log,json=log" json:"log"`
@@ -2563,7 +2407,6 @@ func init() {
 	proto.RegisterType((*ResponseCheckTx)(nil), "types.ResponseCheckTx")
 	proto.RegisterType((*ResponseCheckTxs)(nil), "types.ResponseCheckTxs")
 	proto.RegisterType((*ResponseDeliverTx)(nil), "types.ResponseDeliverTx")
-	proto.RegisterType((*ResponseDeliverTxs)(nil), "types.ResponseDeliverTxs")
 	proto.RegisterType((*ResponseEndBlock)(nil), "types.ResponseEndBlock")
 	proto.RegisterType((*ResponseCleanData)(nil), "types.ResponseCleanData")
 	proto.RegisterType((*ResponseCommit)(nil), "types.ResponseCommit")
@@ -2593,9 +2436,7 @@ type ABCIApplicationClient interface {
 	Flush(ctx context.Context, in *RequestFlush, opts ...grpc.CallOption) (*ResponseFlush, error)
 	Info(ctx context.Context, in *RequestInfo, opts ...grpc.CallOption) (*ResponseInfo, error)
 	SetOption(ctx context.Context, in *RequestSetOption, opts ...grpc.CallOption) (*ResponseSetOption, error)
-	DeliverTxs(ctx context.Context, in *RequestDeliverTxs, opts ...grpc.CallOption) (*ResponseDeliverTxs, error)
 	DeliverTx(ctx context.Context, in *RequestDeliverTx, opts ...grpc.CallOption) (*ResponseDeliverTx, error)
-	CheckTxs(ctx context.Context, in *RequestCheckTxs, opts ...grpc.CallOption) (*ResponseCheckTxs, error)
 	CheckTx(ctx context.Context, in *RequestCheckTx, opts ...grpc.CallOption) (*ResponseCheckTx, error)
 	Query(ctx context.Context, in *RequestQuery, opts ...grpc.CallOption) (*ResponseQuery, error)
 	QueryEx(ctx context.Context, in *RequestQueryEx, opts ...grpc.CallOption) (*ResponseQueryEx, error)
@@ -2660,26 +2501,10 @@ func (c *aBCIApplicationClient) DeliverTx(ctx context.Context, in *RequestDelive
 	}
 	return out, nil
 }
-func (c *aBCIApplicationClient) DeliverTxs(ctx context.Context, in *RequestDeliverTxs, opts ...grpc.CallOption) (*ResponseDeliverTxs, error) {
-	out := new(ResponseDeliverTxs)
-	err := grpc.Invoke(ctx, "/types.ABCIApplication/DeliverTxs", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
 
 func (c *aBCIApplicationClient) CheckTx(ctx context.Context, in *RequestCheckTx, opts ...grpc.CallOption) (*ResponseCheckTx, error) {
 	out := new(ResponseCheckTx)
 	err := grpc.Invoke(ctx, "/types.ABCIApplication/CheckTx", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-func (c *aBCIApplicationClient) CheckTxs(ctx context.Context, in *RequestCheckTxs, opts ...grpc.CallOption) (*ResponseCheckTxs, error) {
-	out := new(ResponseCheckTxs)
-	err := grpc.Invoke(ctx, "/types.ABCIApplication/CheckTxs", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2775,10 +2600,7 @@ type ABCIApplicationServer interface {
 	Info(context.Context, *RequestInfo) (*ResponseInfo, error)
 	SetOption(context.Context, *RequestSetOption) (*ResponseSetOption, error)
 	DeliverTx(context.Context, *RequestDeliverTx) (*ResponseDeliverTx, error)
-	DeliverTxs(context.Context, *RequestDeliverTxs) (*ResponseDeliverTxs, error)
 	CheckTx(context.Context, *RequestCheckTx) (*ResponseCheckTx, error)
-	CheckTxs(context.Context, *RequestCheckTxs) (*ResponseCheckTxs, error)
-	CheckTxConcurrency(context.Context, *RequestCheckTx, chan<- *Response) error
 	Query(context.Context, *RequestQuery) (*ResponseQuery, error)
 	QueryEx(context.Context, *RequestQueryEx) (*ResponseQueryEx, error)
 	Commit(context.Context, *RequestCommit) (*ResponseCommit, error)
@@ -2884,23 +2706,6 @@ func _ABCIApplication_DeliverTx_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ABCIApplication_DeliverTxs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RequestDeliverTxs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ABCIApplicationServer).DeliverTxs(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/types.ABCIApplication/DeliverTxs",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ABCIApplicationServer).DeliverTxs(ctx, req.(*RequestDeliverTxs))
-	}
-	return interceptor(ctx, in, info, handler)
-}
 func _ABCIApplication_CheckTx_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RequestCheckTx)
 	if err := dec(in); err != nil {
@@ -2915,45 +2720,6 @@ func _ABCIApplication_CheckTx_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ABCIApplicationServer).CheckTx(ctx, req.(*RequestCheckTx))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ABCIApplication_CheckTxs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RequestCheckTxs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ABCIApplicationServer).CheckTxs(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/types.ABCIApplication/CheckTxs",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ABCIApplicationServer).CheckTxs(ctx, req.(*RequestCheckTxs))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-func _ABCIApplication_CheckTxConcurrency_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(chan<- *Response)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	in2 := new(RequestCheckTx)
-	if err := dec(in2); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return nil, srv.(ABCIApplicationServer).CheckTxConcurrency(ctx, in2, *in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/types.ABCIApplication/CheckTxConcurrency",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return nil, srv.(ABCIApplicationServer).CheckTxConcurrency(ctx, req.(*RequestCheckTx), *in)
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -3146,16 +2912,8 @@ var _ABCIApplication_serviceDesc = grpc.ServiceDesc{
 			Handler:    _ABCIApplication_DeliverTx_Handler,
 		},
 		{
-			MethodName: "DeliverTxs",
-			Handler:    _ABCIApplication_DeliverTxs_Handler,
-		},
-		{
 			MethodName: "CheckTx",
 			Handler:    _ABCIApplication_CheckTx_Handler,
-		},
-		{
-			MethodName: "CheckTxs",
-			Handler:    _ABCIApplication_CheckTxs_Handler,
 		},
 		{
 			MethodName: "Query",

@@ -31,26 +31,6 @@ type PersistentKVStoreApplication struct {
 	logger log.Logger
 }
 
-func (app *PersistentKVStoreApplication) BeginBlockConcurrency(types.RequestBeginBlock, chan<- *types.Response) types.ResponseBeginBlock {
-	panic("implement me")
-}
-
-func (app *PersistentKVStoreApplication) DeliverTxConcurrency(tx []byte, v interface{}) {
-	panic("implement me")
-}
-
-func (app *PersistentKVStoreApplication) CheckTxConcurrency(tx []byte) {
-	panic("implement me")
-}
-
-func (app *PersistentKVStoreApplication) CheckTxs(txs [][]byte) types.ResponseCheckTxs {
-	panic("implement me")
-}
-
-func (app *PersistentKVStoreApplication) DeliverTxs(txs [][]byte) types.ResponseDeliverTxs {
-	panic("implement me")
-}
-
 func NewPersistentKVStoreApplication(dbDir string) *PersistentKVStoreApplication {
 	name := "kvstore"
 	db, err := dbm.NewGoLevelDB(name, dbDir)
@@ -97,6 +77,10 @@ func (app *PersistentKVStoreApplication) DeliverTx(tx []byte) types.ResponseDeli
 
 	// otherwise, update the key-value store
 	return app.app.DeliverTx(tx)
+}
+
+func (app *PersistentKVStoreApplication) DeliverTxs(deliverTxs []string) []types.ResponseDeliverTx {
+	panic("implement me")
 }
 
 func (app *PersistentKVStoreApplication) CheckTx(tx []byte) types.ResponseCheckTx {
