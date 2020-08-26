@@ -223,12 +223,12 @@ func (s *SocketServer) handleRequests(closeConn chan error, conn net.Conn, respo
 			return
 		}
 		dataChan <- true
-		s.handleRequest(conn, req, responses, reqSent, isCheckConn, deliverTxs)
+		s.handleRequest(conn, req, responses, reqSent, isCheckConn, &deliverTxs)
 	}
 }
 
 func (s *SocketServer) handleRequest(conn net.Conn, req *types.Request, responses chan<- *types.Response,
-	reqSent *list.List, isCheckConn *bool, deliverTxs []string) {
+	reqSent *list.List, isCheckConn *bool, deliverTxs *[]string) {
 
 	switch r := req.Value.(type) {
 	case *types.Request_Echo:
@@ -252,20 +252,21 @@ func (s *SocketServer) handleRequest(conn net.Conn, req *types.Request, response
 	case *types.Request_DeliverTx:
 		//res := s.app.DeliverTx(r.DeliverTx.Tx)
 		//responses <- types.ToResponseDeliverTx(res)
-		deliverTxs = append(deliverTxs, string(r.DeliverTx.Tx))
+		*deliverTxs = append(*deliverTxs, string(r.DeliverTx.Tx))
 	case *types.Request_CheckTx:
-		if *isCheckConn == false {
-			*isCheckConn = true
-			// Read responses from done Reqres and write response to conn
-			go s.handleReqsent(responses, reqSent)
-		}
-
-		reqRes := abcicli.NewReqRes(req)
-		reqSent.PushBack(reqRes)
-		go func() {
-			res := s.app.CheckTx(r.CheckTx.Tx)
-			reqRes.SetResponse(types.ToResponseCheckTx(res))
-		}()
+		//if *isCheckConn == false {
+		//	*isCheckConn = true
+		//	// Read responses from done Reqres and write response to conn
+		//	go s.handleReqsent(responses, reqSent)
+		//}
+		//
+		//reqRes := abcicli.NewReqRes(req)
+		//reqSent.PushBack(reqRes)
+		//go func() {
+		res := s.app.CheckTx(r.CheckTx.Tx)
+		responses <- types.ToResponseCheckTx(res)
+		//reqRes.SetResponse(types.ToResponseCheckTx(res))
+		//}()
 	case *types.Request_Commit:
 		res := s.app.Commit()
 		responses <- types.ToResponseCommit(res)
@@ -279,12 +280,12 @@ func (s *SocketServer) handleRequest(conn net.Conn, req *types.Request, response
 		res := s.app.InitChain(*r.InitChain)
 		responses <- types.ToResponseInitChain(res)
 	case *types.Request_BeginBlock:
-		deliverTxs = make([]string, 0)
+		*deliverTxs = make([]string, 0)
 		res := s.app.BeginBlock(*r.BeginBlock)
 		responses <- types.ToResponseBeginBlock(res)
 	case *types.Request_EndBlock:
-		if len(deliverTxs) > 0 {
-			ress := s.app.DeliverTxs(deliverTxs)
+		if len(*deliverTxs) > 0 {
+			ress := s.app.DeliverTxs(*deliverTxs)
 			for _, res := range ress {
 				responses <- types.ToResponseDeliverTx(res)
 			}
