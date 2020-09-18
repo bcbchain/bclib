@@ -29,13 +29,14 @@ func NewConnectionPool(svrAddr string, curCap int, logger log.Logger) (pool *Con
 	if curCap < 0 {
 		curCap = 0
 	}
-	if curCap > 10 {
-		curCap = 10
-	}
 
+	if curCap > 64 {
+		curCap = 64
+	}
 	pool = &ConnectionPool{
 		SvrAddr: svrAddr,
-		maxCap:  10,
+		//maxCap:  10,
+		maxCap: 64,
 
 		idleConnS: list.New(),
 		busyConnS: make(map[*Client]struct{}),
