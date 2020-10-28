@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/gogo/protobuf/jsonpb"
+	"sync"
 )
 
 const (
@@ -141,3 +142,33 @@ var _ jsonRoundTripper = (*ResponseDeliverTx)(nil)
 var _ jsonRoundTripper = (*ResponseCheckTx)(nil)
 var _ jsonRoundTripper = (*ResponseSetOption)(nil)
 */
+
+type WaitGroupAnyDone struct {
+	bWait        bool
+	bAnyDoneChan chan struct{}
+	mutex        sync.Mutex
+}
+
+func NewWaitGroupAnyDone() *WaitGroupAnyDone {
+	return &WaitGroupAnyDone{
+		bWait:        false,
+		bAnyDoneChan: make(chan struct{}),
+	}
+}
+
+func (wga *WaitGroupAnyDone) Done() {
+	wga.mutex.Lock()
+	if wga.bWait == true {
+		wga.bWait = false
+		wga.bAnyDoneChan <- struct{}{}
+	}
+	wga.mutex.Unlock()
+}
+
+func (wga *WaitGroupAnyDone) Wait() {
+	wga.mutex.Lock()
+	wga.bWait = true
+	wga.mutex.Unlock()
+
+	<-wga.bAnyDoneChan //等待唤醒
+}

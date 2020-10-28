@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/bcbchain/bclib/tendermint/tmlibs/log"
+	"runtime"
 	"sync"
 	"time"
 )
@@ -30,13 +31,13 @@ func NewConnectionPool(svrAddr string, curCap int, logger log.Logger) (pool *Con
 		curCap = 0
 	}
 
-	if curCap > 64 {
-		curCap = 64
+	if curCap > runtime.NumCPU()*8 {
+		curCap = runtime.NumCPU() * 8
 	}
 	pool = &ConnectionPool{
 		SvrAddr: svrAddr,
 		//maxCap:  10,
-		maxCap: 64,
+		maxCap: runtime.NumCPU() * 9,
 
 		idleConnS: list.New(),
 		busyConnS: make(map[*Client]struct{}),

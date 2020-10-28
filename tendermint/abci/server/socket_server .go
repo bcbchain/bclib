@@ -2,12 +2,11 @@ package server
 
 import (
 	"bufio"
-	"container/list"
 	"fmt"
-	abcicli "github.com/bcbchain/bclib/tendermint/abci/client"
 	"io"
 	"net"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -16,7 +15,7 @@ import (
 	cmn "github.com/bcbchain/bclib/tendermint/tmlibs/common"
 )
 
-// var maxNumberConnections = 2
+var maxNumberConnections = runtime.NumCPU() * 8
 
 type SocketServer struct {
 	cmn.BaseService
@@ -29,7 +28,7 @@ type SocketServer struct {
 	conns      map[int]net.Conn
 	nextConnID int
 
-	// appMtx sync.Mutex
+	//appMtx sync.RWMutex
 	app types.Application
 }
 
@@ -204,13 +203,19 @@ func (s *SocketServer) killBcchain() {
 }
 
 // Read requests from conn and deal with them
-func (s *SocketServer) handleRequests(closeConn chan error, conn net.Conn, responses chan<- *types.Response, dataChan chan bool) {
-	var bufReader = bufio.NewReader(conn)
-	reqSent := list.New()
-	isCheckConn := new(bool)
-	*isCheckConn = false
+func (s *SocketServer) handleRequests(closeConn chan error, conn net.Conn, responses chan<- *types.Response,
+	dataChan chan bool) {
 
-	var deliverTxs []string
+	var deliverTxs []string //用来暂时存储所有区块中deliver的交易
+	var leftDeliverNum int  //未处理的deliver交易数量
+	var deliverTxsNum int   //该区块中所有deliver交易的数量
+
+	var abciBeginTime time.Time
+	//var checkRawChan chan abcicli.ReqRes
+	//var reqResAll []abcicli.ReqRes
+	//var timer time.Timer
+
+	var bufReader = bufio.NewReader(conn)
 	for {
 		var req = &types.Request{}
 		err := types.ReadMessage(bufReader, req)
@@ -223,20 +228,29 @@ func (s *SocketServer) handleRequests(closeConn chan error, conn net.Conn, respo
 			return
 		}
 		dataChan <- true
-		s.handleRequest(conn, req, responses, reqSent, isCheckConn, &deliverTxs)
+		//s.handleRequestAll(conn, req, responses, &deliverTxs, &leftDeliverNum, &deliverTxsNum, &connID,
+		//	checkRawChan, reqResAll, timer)
+		s.handleRequest(conn, req, responses, &deliverTxs, &leftDeliverNum, &deliverTxsNum, &abciBeginTime)
 	}
 }
 
 func (s *SocketServer) handleRequest(conn net.Conn, req *types.Request, responses chan<- *types.Response,
-	reqSent *list.List, isCheckConn *bool, deliverTxs *[]string) {
+	deliverTxs *[]string, leftDeliverNum *int, deliverTxsNum *int, abciBeginTime *time.Time) {
 
 	switch r := req.Value.(type) {
 	case *types.Request_Echo:
 		responses <- types.ToResponseEcho(r.Echo.Message)
 	case *types.Request_Flush:
-		if *isCheckConn == true {
-			reqRes := abcicli.NewReqRes(req)
-			reqSent.PushBack(reqRes)
+		if *leftDeliverNum != 0 { //如果已经有deliver的交易了，就让之前的交易全部进行运算后，在进行flush的传输
+			if len(*deliverTxs) != 0 {
+				s.Logger.Error("Request_Flush", "The number of transactions Request_Flush sent was", len(*deliverTxs))
+				s.app.PutDeliverTxs(*deliverTxs)
+				*deliverTxs = make([]string, 0)
+			}
+			s.HandleDeliverTxsResponses(leftDeliverNum, responses, true)
+			responses <- types.ToResponseFlush()
+			//} else if s.connType[*connID] == "AppConnMempool" {
+			//	responses <- types.ToResponseFlush()
 		} else {
 			responses <- types.ToResponseFlush()
 		}
@@ -250,23 +264,23 @@ func (s *SocketServer) handleRequest(conn net.Conn, req *types.Request, response
 		res := s.app.SetOption(*r.SetOption)
 		responses <- types.ToResponseSetOption(res)
 	case *types.Request_DeliverTx:
-		//res := s.app.DeliverTx(r.DeliverTx.Tx)
-		//responses <- types.ToResponseDeliverTx(res)
 		*deliverTxs = append(*deliverTxs, string(r.DeliverTx.Tx))
+		*deliverTxsNum++
+		*leftDeliverNum++
+		if len(*deliverTxs) == maxNumberConnections {
+			s.Logger.Error("Request_DeliverTx", "The number of transactions Request_DeliverTx sent was", len(*deliverTxs))
+			s.app.PutDeliverTxs(*deliverTxs)
+			*deliverTxs = make([]string, 0)
+		}
+		s.HandleDeliverTxsResponses(leftDeliverNum, responses, false)
 	case *types.Request_CheckTx:
-		//if *isCheckConn == false {
-		//	*isCheckConn = true
-		//	// Read responses from done Reqres and write response to conn
-		//	go s.handleReqsent(responses, reqSent)
-		//}
-		//
-		//reqRes := abcicli.NewReqRes(req)
-		//reqSent.PushBack(reqRes)
-		//go func() {
 		res := s.app.CheckTx(r.CheckTx.Tx)
+		//res := types.ResponseCheckTx{
+		//	Code: 200,
+		//	Data: "",
+		//	Log:  "",
+		//}
 		responses <- types.ToResponseCheckTx(res)
-		//reqRes.SetResponse(types.ToResponseCheckTx(res))
-		//}()
 	case *types.Request_Commit:
 		res := s.app.Commit()
 		responses <- types.ToResponseCommit(res)
@@ -280,18 +294,27 @@ func (s *SocketServer) handleRequest(conn net.Conn, req *types.Request, response
 		res := s.app.InitChain(*r.InitChain)
 		responses <- types.ToResponseInitChain(res)
 	case *types.Request_BeginBlock:
+		s.Logger.Error("Request_BeginBlock")
+		*abciBeginTime = time.Now()
 		*deliverTxs = make([]string, 0)
+		*leftDeliverNum = 0
+		*deliverTxsNum = 0
 		res := s.app.BeginBlock(*r.BeginBlock)
 		responses <- types.ToResponseBeginBlock(res)
 	case *types.Request_EndBlock:
-		if len(*deliverTxs) > 0 {
-			ress := s.app.DeliverTxs(*deliverTxs)
-			for _, res := range ress {
-				responses <- types.ToResponseDeliverTx(res)
+		if *leftDeliverNum > 0 || len(*deliverTxs) > 0 {
+			s.Logger.Debug("Request_EndBlock", "The number of transactions Request_EndBlock sent was", len(*deliverTxs))
+			if len(*deliverTxs) != 0 {
+				s.app.PutDeliverTxs(*deliverTxs)
+				*deliverTxs = make([]string, 0)
 			}
+			s.HandleDeliverTxsResponses(leftDeliverNum, responses, true)
+			s.Logger.Error("Request_EndBlock", "leftDeliverNum", *leftDeliverNum)
 		}
 		res := s.app.EndBlock(*r.EndBlock)
 		responses <- types.ToResponseEndBlock(res)
+		abciTime := time.Now().Sub(*abciBeginTime)
+		s.Logger.Error("测试结果", "abci的时间", abciTime, "区块中总交易数量为", *deliverTxsNum, "abciTPS", float64(*deliverTxsNum)/abciTime.Seconds(), "区块高度为", r.EndBlock.Height)
 	case *types.Request_CleanData:
 		res := s.app.CleanData()
 		responses <- types.ToResponseCleanData(res)
@@ -306,6 +329,205 @@ func (s *SocketServer) handleRequest(conn net.Conn, req *types.Request, response
 	}
 }
 
+//func (s *SocketServer) handleRequestAll(conn net.Conn, responses chan<- *types.Response,
+//	RequestChan chan *types.Request, connID *int) {
+//
+//	var deliverTxs []string //用来暂时存储所有区块中deliver的交易
+//	var leftDeliverNum int  //未处理的deliver交易数量
+//	var deliverTxsNum int   //该区块中所有deliver交易的数量
+//
+//	var checkRawChan chan abcicli.ReqRes
+//	var reqResAll []abcicli.ReqRes
+//	var timer time.Timer
+//
+//	for {
+//		select {
+//		case req := <-RequestChan:
+//			switch req.Value.(type) {
+//			case *types.Request_Echo:
+//				s.handleQueryRequest(conn, req, responses, &deliverTxs, &leftDeliverNum, &deliverTxsNum, connID)
+//			case *types.Request_Flush:
+//				switch s.connType[*connID] {
+//				case "Consensus":
+//					s.handleMempoolRequest(req, responses, checkRawChan)
+//				case "Mempool":
+//					s.handleConsensusRequest(conn, req, responses, deliverTxs, leftDeliverNum, deliverTxsNum, connID)
+//				case "Query":
+//					responses <- types.ToResponseFlush()
+//				}
+//			case *types.Request_Info:
+//				s.connsQueryOnce.Do(func() {
+//					s.connType[*connID] = "Query"
+//				})
+//				s.handleQueryRequest(conn, req, responses, deliverTxs, leftDeliverNum, deliverTxsNum, connID)
+//			case *types.Request_SetOption:
+//				s.handleQueryRequest(conn, req, responses, deliverTxs, leftDeliverNum, deliverTxsNum, connID)
+//			case *types.Request_DeliverTx:
+//				s.handleConsensusRequest(conn, req, responses, deliverTxs, leftDeliverNum, deliverTxsNum, connID)
+//			case *types.Request_CheckTx:
+//				s.connsMempoolOnce.Do(func() {
+//					s.connType[*connID] = "Mempool"
+//					var flag chan []abcicli.ReqRes
+//					go s.HandleCheck(checkRawChan, reqResAll, timer, flag)
+//					go s.HandleCheckTxsResponses(responses, flag)
+//				})
+//				s.handleMempoolRequest(req, responses, checkRawChan)
+//			case *types.Request_Commit:
+//				s.handleConsensusRequest(conn, req, responses, deliverTxs, leftDeliverNum, deliverTxsNum, connID)
+//			case *types.Request_Query:
+//				s.handleQueryRequest(conn, req, responses, deliverTxs, leftDeliverNum, deliverTxsNum, connID)
+//			case *types.Request_QueryEx:
+//				s.handleQueryRequest(conn, req, responses, deliverTxs, leftDeliverNum, deliverTxsNum, connID)
+//			case *types.Request_InitChain:
+//				s.connsConsensusOnce.Do(func() {
+//					s.connType[*connID] = "Consensus"
+//				})
+//				s.handleConsensusRequest(conn, req, responses, deliverTxs, leftDeliverNum, deliverTxsNum, connID)
+//			case *types.Request_BeginBlock:
+//				s.connsConsensusOnce.Do(func() {
+//					s.connType[*connID] = "Consensus"
+//				})
+//				s.handleConsensusRequest(conn, req, responses, deliverTxs, leftDeliverNum, deliverTxsNum, connID)
+//			case *types.Request_EndBlock:
+//				s.handleConsensusRequest(conn, req, responses, deliverTxs, leftDeliverNum, deliverTxsNum, connID)
+//			case *types.Request_CleanData:
+//				s.handleConsensusRequest(conn, req, responses, deliverTxs, leftDeliverNum, deliverTxsNum, connID)
+//			case *types.Request_GetGenesis:
+//				s.handleQueryRequest(conn, req, responses, deliverTxs, leftDeliverNum, deliverTxsNum, connID)
+//			case *types.Request_Rollback:
+//				switch s.connType[*connID] {
+//				case "Consensus":
+//					s.handleMempoolRequest(req, responses, checkRawChan)
+//				case "Mempool":
+//					s.handleConsensusRequest(conn, req, responses, deliverTxs, leftDeliverNum, deliverTxsNum, connID)
+//				}
+//			default:
+//				responses <- types.ToResponseException("Unknown request")
+//			}
+//		}
+//	}
+//
+//}
+
+//func (s *SocketServer) handleConsensusRequest(conn net.Conn, req *types.Request, responses chan<- *types.Response,
+//	deliverTxs *[]string, leftDeliverNum *int, deliverTxsNum *int, connID *int) {
+//
+//	switch r := req.Value.(type) {
+//	case *types.Request_Flush:
+//		if len(*deliverTxs) != 0 {
+//			s.Logger.Error("Request_Flush", "The number of transactions Request_Flush sent was", len(*deliverTxs))
+//			s.app.PutDeliverTxs(*deliverTxs)
+//			*deliverTxs = make([]string, 0)
+//		}
+//		s.HandleDeliverTxsResponses(leftDeliverNum, responses, true)
+//		responses <- types.ToResponseFlush()
+//	case *types.Request_DeliverTx:
+//		*deliverTxs = append(*deliverTxs, string(r.DeliverTx.Tx))
+//		*deliverTxsNum++
+//		*leftDeliverNum++
+//		if len(*deliverTxs) == maxNumberConnections {
+//			s.Logger.Error("Request_DeliverTx", "The number of transactions Request_DeliverTx sent was", len(*deliverTxs))
+//			s.app.PutDeliverTxs(*deliverTxs)
+//			*deliverTxs = make([]string, 0)
+//		}
+//		s.HandleDeliverTxsResponses(leftDeliverNum, responses, false)
+//	case *types.Request_Commit:
+//		res := s.app.Commit()
+//		responses <- types.ToResponseCommit(res)
+//	case *types.Request_InitChain:
+//		res := s.app.InitChain(*r.InitChain)
+//		responses <- types.ToResponseInitChain(res)
+//	case *types.Request_BeginBlock:
+//		*deliverTxs = make([]string, 0)
+//		*leftDeliverNum = 0
+//		*deliverTxsNum = 0
+//		res := s.app.BeginBlock(*r.BeginBlock)
+//		responses <- types.ToResponseBeginBlock(res)
+//	case *types.Request_EndBlock:
+//		if *leftDeliverNum > 0 || len(*deliverTxs) > 0 {
+//			s.Logger.Debug("Request_EndBlock", "The number of transactions Request_EndBlock sent was", len(*deliverTxs))
+//			if len(*deliverTxs) != 0 {
+//				s.app.PutDeliverTxs(*deliverTxs)
+//				*deliverTxs = make([]string, 0)
+//			}
+//			s.HandleDeliverTxsResponses(leftDeliverNum, responses, true)
+//			s.Logger.Error("Request_EndBlock", "leftDeliverNum", *leftDeliverNum)
+//		}
+//		res := s.app.EndBlock(*r.EndBlock)
+//		responses <- types.ToResponseEndBlock(res)
+//	case *types.Request_CleanData:
+//		res := s.app.CleanData()
+//		responses <- types.ToResponseCleanData(res)
+//	case *types.Request_Rollback:
+//		res := s.app.Rollback()
+//		responses <- types.ToResponseRollback(res)
+//	default:
+//		responses <- types.ToResponseException("Unknown request")
+//	}
+//}
+//
+//func (s *SocketServer) handleMempoolRequest(req *types.Request, responses chan<- *types.Response,
+//	CheckRawChan chan abcicli.ReqRes) {
+//
+//	switch req.Value.(type) {
+//	case *types.Request_Flush:
+//		responses <- types.ToResponseFlush()
+//	case *types.Request_CheckTx:
+//		reqRes := abcicli.NewReqRes(req)
+//		CheckRawChan <- *reqRes
+//		//res := s.app.CheckTx(r.CheckTx.Tx)
+//		//responses <- types.ToResponseCheckTx(res)
+//	case *types.Request_Rollback:
+//		res := s.app.Rollback()
+//		responses <- types.ToResponseRollback(res)
+//	default:
+//		responses <- types.ToResponseException("Unknown request")
+//	}
+//}
+//
+//func (s *SocketServer) handleQueryRequest(conn net.Conn, req *types.Request, responses chan<- *types.Response,
+//	deliverTxs *[]string, leftDeliverNum *int, deliverTxsNum *int, connID *int) {
+//
+//	switch r := req.Value.(type) {
+//	case *types.Request_Echo:
+//		responses <- types.ToResponseEcho(r.Echo.Message)
+//	case *types.Request_Flush:
+//		if *leftDeliverNum != 0 { //如果已经有deliver的交易了，就让之前的交易全部进行运算后，在进行flush的传输
+//			if len(*deliverTxs) != 0 && s.connType[*connID] == "AppConnConsensus" {
+//				s.Logger.Error("Request_Flush", "The number of transactions Request_Flush sent was", len(*deliverTxs))
+//				s.app.PutDeliverTxs(*deliverTxs)
+//				*deliverTxs = make([]string, 0)
+//			}
+//			s.HandleDeliverTxsResponses(leftDeliverNum, responses, true)
+//			responses <- types.ToResponseFlush()
+//		} else if s.connType[*connID] == "AppConnMempool" {
+//			responses <- types.ToResponseFlush()
+//		} else {
+//			responses <- types.ToResponseFlush()
+//		}
+//	case *types.Request_Info:
+//		addr := conn.RemoteAddr().String()
+//		spl := strings.Split(addr, ":")
+//		r.Info.Host = spl[0]
+//		res := s.app.Info(*r.Info)
+//		responses <- types.ToResponseInfo(res)
+//	case *types.Request_SetOption:
+//		res := s.app.SetOption(*r.SetOption)
+//		responses <- types.ToResponseSetOption(res)
+//	case *types.Request_Query:
+//		res := s.app.Query(*r.Query)
+//		responses <- types.ToResponseQuery(res)
+//	case *types.Request_QueryEx:
+//		res := s.app.QueryEx(*r.QueryEx)
+//		responses <- types.ToResponseQueryEx(res)
+//	case *types.Request_GetGenesis:
+//		res := s.app.GetGenesis()
+//		responses <- types.ToResponseGetGenesis(res)
+//	default:
+//		responses <- types.ToResponseException("Unknown request")
+//	}
+//}
+
 // Pull responses from 'responses' and write them to conn.
 func (s *SocketServer) handleResponses(closeConn chan error, conn net.Conn, responses <-chan *types.Response) {
 	//var count int
@@ -317,6 +539,7 @@ func (s *SocketServer) handleResponses(closeConn chan error, conn net.Conn, resp
 			closeConn <- fmt.Errorf("Error writing message: %v", err.Error())
 			return
 		}
+
 		if _, ok := res.Value.(*types.Response_Flush); ok {
 			err = bufWriter.Flush()
 			if err != nil {
@@ -324,31 +547,114 @@ func (s *SocketServer) handleResponses(closeConn chan error, conn net.Conn, resp
 				return
 			}
 		}
-		//count++
 	}
 }
 
-func (s *SocketServer) handleReqsent(responses chan<- *types.Response, reqSent *list.List) {
-	for {
-		next := reqSent.Front()
-		if next == nil {
-			time.Sleep(time.Second)
-		} else {
-			reqres := next.Value.(*abcicli.ReqRes)
-			if reqres.Response != nil {
-				responses <- reqres.Response
-				reqSent.Remove(next)
-			}
+//// putCheckTxs 将checktx放入，进行并发计算
+//func (s *SocketServer) putCheckTxs(reqResAll []abcicli.ReqRes, flag []abcicli.ReqRes) {
+//	for _, reqRes := range reqResAll {
+//		go func(reqRes abcicli.ReqRes) {
+//			res := s.app.CheckTx(reqRes.Request.Value.(*types.Request_CheckTx).CheckTx.Tx)
+//			reqRes.SetResponse(types.ToResponseCheckTx(res))
+//		}(reqRes)
+//	}
+//}
+//
+//func (s *SocketServer) HandleCheck(CheckRawChan chan abcicli.ReqRes, reqResAll []abcicli.ReqRes,
+//	timer time.Timer, flag chan []abcicli.ReqRes) {
+//	for {
+//		select {
+//		case reqres := <-CheckRawChan:
+//			reqResAll = append(reqResAll, reqres)
+//			if len(reqResAll) == runtime.NumCPU()*2 {
+//				s.putCheckTxs(reqResAll)
+//			}
+//		case <-timer.C:
+//			s.putCheckTxs(reqResAll)
+//		}
+//	}
+//}
+//
+//// HandleCheckTxsResponses 将已投入checktx的response返回，严格按照顺序
+//func (s *SocketServer) HandleCheckTxsResponses(responses chan<- *types.Response, flag chan []abcicli.ReqRes) {
+//	for {
+//		select {
+//		case <-flag:
+//
+//		}
+//	}
+//}
 
-			switch r := reqres.Request.Value.(type) {
-			case *types.Request_Flush:
-				responses <- types.ToResponseFlush()
-				reqSent.Remove(next)
-			case *types.Request_EndBlock:
-				res := s.app.EndBlock(*r.EndBlock)
-				responses <- types.ToResponseEndBlock(res)
-				reqSent.Remove(next)
+func (s *SocketServer) HandleDeliverTxsResponses(leftNum *int, responses chan<- *types.Response, flag bool) {
+	for {
+		if ress := s.app.GetDeliverTxsResponses(); ress != nil {
+			s.Logger.Error("HandleDeliverTxsResponses", "返回的交易的数量为", len(ress))
+			*leftNum -= len(ress)
+			for _, res := range ress {
+				responses <- types.ToResponseDeliverTx(res)
 			}
+		}
+		if flag == false || *leftNum == 0 {
+			break
 		}
 	}
 }
+
+//func (s *SocketServer) handleReqsent(responses chan<- *types.Response, reqSent *list.List, isChecking *bool,
+//	CheckTxChan chan struct{}, leftCheckNum *int) {
+//	for {
+//		select {
+//		case <-CheckTxChan:
+//			for {
+//				s.Logger.Error("test", "reqSent.Len()", reqSent.Len())
+//				if next := reqSent.Front(); next != nil {
+//					reqres := next.Value.(*abcicli.ReqRes)
+//					if reqres.Response != nil {
+//						//s.Logger.Error("handleReqsent", "handleReqsent", reqres.Response.String())
+//						responses <- reqres.Response
+//						reqSent.Remove(next)
+//						break
+//					}
+//				}
+//				time.Sleep(time.Second)
+//			}
+//		}
+//	}
+//}
+//
+//func (s *SocketServer) verifyClientType(connID int, req *types.Request) {
+//	switch req.Value.(type) {
+//	case *types.Request_CheckTx:
+//		s.connType[connID] = "AppConnMempool"
+//
+//	case *types.Request_Echo:
+//		s.connType[connID] = "AppConnQuery"
+//	case *types.Request_Query:
+//		s.connType[connID] = "AppConnQuery"
+//	case *types.Request_QueryEx:
+//		s.connType[connID] = "AppConnQuery"
+//	case *types.Request_Info:
+//		s.connType[connID] = "AppConnQuery"
+//	case *types.Request_GetGenesis:
+//		s.connType[connID] = "AppConnQuery"
+//
+//	case *types.Request_InitChain:
+//		s.connType[connID] = "AppConnConsensus"
+//	case *types.Request_BeginBlock:
+//		s.connType[connID] = "AppConnConsensus"
+//	case *types.Request_DeliverTx:
+//		s.connType[connID] = "AppConnConsensus"
+//	case *types.Request_EndBlock:
+//		s.connType[connID] = "AppConnConsensus"
+//	case *types.Request_Commit:
+//		s.connType[connID] = "AppConnConsensus"
+//	case *types.Request_CleanData:
+//		s.connType[connID] = "AppConnConsensus"
+//
+//	case *types.Request_SetOption:
+//
+//	case *types.Request_Flush:
+//
+//	case *types.Request_Rollback:
+//	}
+//}

@@ -2,8 +2,8 @@ package socket
 
 import (
 	"bufio"
-	"github.com/bcbchain/bclib/jsoniter"
 	"encoding/binary"
+	"github.com/bcbchain/bclib/jsoniter"
 	"io"
 )
 
@@ -40,7 +40,7 @@ func writeMessage(data interface{}, w io.Writer) error {
 	if err != nil {
 		return err
 	}
-
+	//fmt.Println(string(resBytes))
 	return encodeByteSlice(w, resBytes)
 }
 

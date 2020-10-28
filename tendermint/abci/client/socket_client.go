@@ -49,6 +49,7 @@ func NewSocketClient(addr string, mustConnect bool) *socketClient {
 		reqSent: list.New(),
 		resCb:   nil,
 	}
+
 	cli.BaseService = *cmn.NewBaseService(nil, "socketClient", cli)
 	return cli
 }

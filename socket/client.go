@@ -1,11 +1,11 @@
 package socket
 
 import (
-	"github.com/bcbchain/bclib/types"
 	"bufio"
 	"container/list"
 	"errors"
 	"fmt"
+	"github.com/bcbchain/bclib/types"
 	"io"
 	"math"
 	"net"
@@ -13,8 +13,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/json-iterator/go"
 	"github.com/bcbchain/bclib/tendermint/tmlibs/log"
+	"github.com/json-iterator/go"
 )
 
 // Client client information about socket

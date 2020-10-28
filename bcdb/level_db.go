@@ -37,6 +37,26 @@ func OpenDB(name string, ip string, port string) (*GILevelDB, error) {
 		home := os.Getenv("HOME")
 		dbPath = filepath.Join(home, name+".db")
 	}
+
+	//opt := &opt.Options{
+	//	BlockCacheCapacity:            16 * opt.MiB,  // default   8 MiB
+	//	BlockRestartInterval:          32,            // default  16
+	//	BlockSize:                     32 * opt.KiB,  // default   4 KiB
+	//	CompactionExpandLimitFactor:   25,            // default  25
+	//	CompactionGPOverlapsFactor:    10,            // default  10
+	//	CompactionL0Trigger:           4,             // default   4
+	//	CompactionSourceLimitFactor:   1,             // default   1
+	//	CompactionTableSize:           8 * opt.MiB,   // default   2 MiB
+	//	CompactionTableSizeMultiplier: 1,             // default   1
+	//	CompactionTotalSize:           128 * opt.MiB, // default  10 MiB
+	//	CompactionTotalSizeMultiplier: 10,            // default  10
+	//	IteratorSamplingRate:          1 * opt.MiB,   // default   1 MiB
+	//	OpenFilesCacheCapacity:        500,           // default 500
+	//	WriteBuffer:                   32 * opt.MiB,  // default   4 MiB
+	//	WriteL0PauseTrigger:           64,            // default  12
+	//	WriteL0SlowdownTrigger:        64,            // default   8
+	//}
+
 	db, err := leveldb.OpenFile(dbPath, nil)
 	if err != nil {
 		return nil, err

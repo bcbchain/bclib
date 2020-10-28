@@ -31,6 +31,22 @@ type PersistentKVStoreApplication struct {
 	logger log.Logger
 }
 
+func (app *PersistentKVStoreApplication) PutDeliverTxs(deliverTxs []string) {
+	panic("implement me")
+}
+
+func (app *PersistentKVStoreApplication) GetDeliverTxsResponses() []types.ResponseDeliverTx {
+	panic("implement me")
+}
+
+func (app *PersistentKVStoreApplication) DeliverTxs2(deliverTxs []string, ResponseDeliverTxchan chan []types.ResponseDeliverTx) {
+	panic("implement me")
+}
+
+func (app *PersistentKVStoreApplication) TestTps() {
+	panic("implement me")
+}
+
 func NewPersistentKVStoreApplication(dbDir string) *PersistentKVStoreApplication {
 	name := "kvstore"
 	db, err := dbm.NewGoLevelDB(name, dbDir)

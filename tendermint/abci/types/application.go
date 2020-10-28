@@ -22,8 +22,12 @@ type Application interface {
 	BeginBlock(RequestBeginBlock) ResponseBeginBlock    // Signals the beginning of a block
 	DeliverTx(tx []byte) ResponseDeliverTx              // Deliver a tx for full processing
 	DeliverTxs(deliverTxs []string) []ResponseDeliverTx // Deliver all tx in block for full processing
-	EndBlock(RequestEndBlock) ResponseEndBlock          // Signals the end of a block, returns changes to the validator set
-	Commit() ResponseCommit                             // Commit the state and return the application Merkle root hash
+
+	PutDeliverTxs(deliverTxs []string)           // Put some txs of block for full processing
+	GetDeliverTxsResponses() []ResponseDeliverTx // Get ResponseDeliverTx of some txs,Returns nil if the calculation has not been completed.
+
+	EndBlock(RequestEndBlock) ResponseEndBlock // Signals the end of a block, returns changes to the validator set
+	Commit() ResponseCommit                    // Commit the state and return the application Merkle root hash
 
 	// Clear all bcchain data when side chain genesis
 	CleanData() ResponseCleanData
@@ -37,6 +41,14 @@ type Application interface {
 var _ Application = (*BaseApplication)(nil)
 
 type BaseApplication struct {
+}
+
+func (a BaseApplication) PutDeliverTxs(deliverTxs []string) {
+	panic("implement me")
+}
+
+func (a BaseApplication) GetDeliverTxsResponses() []ResponseDeliverTx {
+	panic("implement me")
 }
 
 func NewBaseApplication() *BaseApplication {
