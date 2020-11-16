@@ -35,7 +35,7 @@ func (app *PersistentKVStoreApplication) PutDeliverTxs(deliverTxs []string) {
 	panic("implement me")
 }
 
-func (app *PersistentKVStoreApplication) GetDeliverTxsResponses() []types.ResponseDeliverTx {
+func (app *PersistentKVStoreApplication) GetDeliverTxsResponses() *types.ResponseDeliverTx {
 	panic("implement me")
 }
 

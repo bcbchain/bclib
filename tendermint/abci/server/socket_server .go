@@ -28,7 +28,7 @@ type SocketServer struct {
 	conns      map[int]net.Conn
 	nextConnID int
 
-	//appMtx sync.RWMutex
+	//appMtx sync.Mutex
 	app types.Application
 }
 
@@ -275,11 +275,6 @@ func (s *SocketServer) handleRequest(conn net.Conn, req *types.Request, response
 		s.HandleDeliverTxsResponses(leftDeliverNum, responses, false)
 	case *types.Request_CheckTx:
 		res := s.app.CheckTx(r.CheckTx.Tx)
-		//res := types.ResponseCheckTx{
-		//	Code: 200,
-		//	Data: "",
-		//	Log:  "",
-		//}
 		responses <- types.ToResponseCheckTx(res)
 	case *types.Request_Commit:
 		res := s.app.Commit()
@@ -303,7 +298,7 @@ func (s *SocketServer) handleRequest(conn net.Conn, req *types.Request, response
 		responses <- types.ToResponseBeginBlock(res)
 	case *types.Request_EndBlock:
 		if *leftDeliverNum > 0 || len(*deliverTxs) > 0 {
-			s.Logger.Debug("Request_EndBlock", "The number of transactions Request_EndBlock sent was", len(*deliverTxs))
+			s.Logger.Error("Request_EndBlock", "The number of transactions Request_EndBlock sent was", len(*deliverTxs))
 			if len(*deliverTxs) != 0 {
 				s.app.PutDeliverTxs(*deliverTxs)
 				*deliverTxs = make([]string, 0)
@@ -587,12 +582,11 @@ func (s *SocketServer) handleResponses(closeConn chan error, conn net.Conn, resp
 
 func (s *SocketServer) HandleDeliverTxsResponses(leftNum *int, responses chan<- *types.Response, flag bool) {
 	for {
-		if ress := s.app.GetDeliverTxsResponses(); ress != nil {
-			s.Logger.Error("HandleDeliverTxsResponses", "返回的交易的数量为", len(ress))
-			*leftNum -= len(ress)
-			for _, res := range ress {
-				responses <- types.ToResponseDeliverTx(res)
-			}
+		if res := s.app.GetDeliverTxsResponses(); res != nil {
+			//s.Logger.Error("HandleDeliverTxsResponses", "返回的交易的数量为", len(ress))
+			//
+			*leftNum--
+			responses <- types.ToResponseDeliverTx(*res)
 		}
 		if flag == false || *leftNum == 0 {
 			break

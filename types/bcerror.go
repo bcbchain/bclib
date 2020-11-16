@@ -20,6 +20,15 @@ func (bcerror *BcError) Error() string {
 	return ""
 }
 
+func (bcerror *BcError) Get() (uint32, string) {
+	return bcerror.ErrorCode, bcerror.ErrorDesc
+}
+
+func (bcerror *BcError) Set(ErrorCode uint32, ErrorDesc string) {
+	bcerror.ErrorCode = ErrorCode
+	bcerror.ErrorDesc = ErrorDesc
+}
+
 //CodeOK means success
 // CodeBVMQueryOK success of call BVM view function
 const (

@@ -23,8 +23,8 @@ type Application interface {
 	DeliverTx(tx []byte) ResponseDeliverTx              // Deliver a tx for full processing
 	DeliverTxs(deliverTxs []string) []ResponseDeliverTx // Deliver all tx in block for full processing
 
-	PutDeliverTxs(deliverTxs []string)           // Put some txs of block for full processing
-	GetDeliverTxsResponses() []ResponseDeliverTx // Get ResponseDeliverTx of some txs,Returns nil if the calculation has not been completed.
+	PutDeliverTxs(deliverTxs []string)          // Put some txs of block for full processing
+	GetDeliverTxsResponses() *ResponseDeliverTx // Get ResponseDeliverTx of some txs,Returns nil if the calculation has not been completed.
 
 	EndBlock(RequestEndBlock) ResponseEndBlock // Signals the end of a block, returns changes to the validator set
 	Commit() ResponseCommit                    // Commit the state and return the application Merkle root hash
@@ -47,7 +47,7 @@ func (a BaseApplication) PutDeliverTxs(deliverTxs []string) {
 	panic("implement me")
 }
 
-func (a BaseApplication) GetDeliverTxsResponses() []ResponseDeliverTx {
+func (a BaseApplication) GetDeliverTxsResponses() *ResponseDeliverTx {
 	panic("implement me")
 }
 
