@@ -243,7 +243,7 @@ func (s *SocketServer) handleRequest(conn net.Conn, req *types.Request, response
 	case *types.Request_Flush:
 		if *leftDeliverNum != 0 { //如果已经有deliver的交易了，就让之前的交易全部进行运算后，在进行flush的传输
 			if len(*deliverTxs) != 0 {
-				s.Logger.Error("Request_Flush", "The number of transactions Request_Flush sent was", len(*deliverTxs))
+				s.Logger.Debug("Request_Flush", "The number of transactions Request_Flush sent was", len(*deliverTxs))
 				s.app.PutDeliverTxs(*deliverTxs)
 				*deliverTxs = make([]string, 0)
 			}
@@ -268,7 +268,7 @@ func (s *SocketServer) handleRequest(conn net.Conn, req *types.Request, response
 		*deliverTxsNum++
 		*leftDeliverNum++
 		if len(*deliverTxs) == maxNumberConnections {
-			s.Logger.Error("Request_DeliverTx", "The number of transactions Request_DeliverTx sent was", len(*deliverTxs))
+			s.Logger.Info("Request_DeliverTx", "The number of transactions Request_DeliverTx sent was", len(*deliverTxs))
 			s.app.PutDeliverTxs(*deliverTxs)
 			*deliverTxs = make([]string, 0)
 		}
@@ -298,18 +298,18 @@ func (s *SocketServer) handleRequest(conn net.Conn, req *types.Request, response
 		responses <- types.ToResponseBeginBlock(res)
 	case *types.Request_EndBlock:
 		if *leftDeliverNum > 0 || len(*deliverTxs) > 0 {
-			s.Logger.Error("Request_EndBlock", "The number of transactions Request_EndBlock sent was", len(*deliverTxs))
+			s.Logger.Debug("Request_EndBlock", "The number of transactions Request_EndBlock sent was", len(*deliverTxs))
 			if len(*deliverTxs) != 0 {
 				s.app.PutDeliverTxs(*deliverTxs)
 				*deliverTxs = make([]string, 0)
 			}
 			s.HandleDeliverTxsResponses(leftDeliverNum, responses, true)
-			s.Logger.Error("Request_EndBlock", "leftDeliverNum", *leftDeliverNum)
+			s.Logger.Debug("Request_EndBlock", "leftDeliverNum", *leftDeliverNum)
 		}
 		res := s.app.EndBlock(*r.EndBlock)
 		responses <- types.ToResponseEndBlock(res)
 		abciTime := time.Now().Sub(*abciBeginTime)
-		s.Logger.Error("测试结果", "abci的时间", abciTime, "区块中总交易数量为", *deliverTxsNum, "abciTPS", float64(*deliverTxsNum)/abciTime.Seconds(), "区块高度为", r.EndBlock.Height)
+		s.Logger.Debug("测试结果", "abci的时间", abciTime, "区块中总交易数量为", *deliverTxsNum, "abciTPS", float64(*deliverTxsNum)/abciTime.Seconds(), "区块高度为", r.EndBlock.Height)
 	case *types.Request_CleanData:
 		res := s.app.CleanData()
 		responses <- types.ToResponseCleanData(res)
