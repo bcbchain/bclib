@@ -289,7 +289,7 @@ func (s *SocketServer) handleRequest(conn net.Conn, req *types.Request, response
 		res := s.app.InitChain(*r.InitChain)
 		responses <- types.ToResponseInitChain(res)
 	case *types.Request_BeginBlock:
-		s.Logger.Error("Request_BeginBlock")
+		s.Logger.Debug("Request_BeginBlock")
 		*abciBeginTime = time.Now()
 		*deliverTxs = make([]string, 0)
 		*leftDeliverNum = 0
